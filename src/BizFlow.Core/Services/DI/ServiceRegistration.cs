@@ -1,8 +1,9 @@
 ﻿using BizFlow.Core.Controllers;
 using BizFlow.Core.Internal;
 using Microsoft.Extensions.DependencyInjection;
-using Quartz;
+using Quartz.Spi;
 using System.Reflection;
+
 
 namespace BizFlow.Core.Services.DI
 {
@@ -10,23 +11,22 @@ namespace BizFlow.Core.Services.DI
     {
         public static void AddBizFlow(this IServiceCollection services)
         {
-            services.AddQuartz(q =>
-            {
-                var jobKey = new JobKey("BizFlowJob");
-                q.AddJob<BizFlowJob>(opts => opts.WithIdentity(jobKey));
+            services.AddSingleton<BizFlowJob>();
+            services.AddSingleton<IJobFactory, SingletonJobFactory>();
+            services.AddSingleton<Internal.QuartzHostedService>();
 
-                q.AddTrigger(opts => opts
-                    .ForJob(jobKey)
-                    .WithIdentity("BizFlowJob-trigger")
-                    .WithCronSchedule("0/5 * * * * ?"));
-            });
+            var serviceProvider = services.BuildServiceProvider();
+            var quartzHostedService = serviceProvider.GetRequiredService<QuartzHostedService>();
 
-            services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+            services.AddHostedService<QuartzHostedService>(x => quartzHostedService);
+            services.AddSingleton<IJobsManager>(x => quartzHostedService);
+            services.AddHostedService<QuartzHostedService>();
 
             var assembly = typeof(BizFlowController).GetTypeInfo().Assembly;
 
             services.AddMvcCore()
                 .AddApplicationPart(assembly);
+
         }
     }
 }

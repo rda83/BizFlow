@@ -3,7 +3,7 @@ using Quartz;
 
 namespace BizFlow.Core.Internal
 {
-    class BizFlowJob : IJob
+    public class BizFlowJob : IJob
     {
         private readonly ILogger<BizFlowJob> logger;
 
