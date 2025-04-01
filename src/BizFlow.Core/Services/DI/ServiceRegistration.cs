@@ -1,5 +1,6 @@
 ﻿using BizFlow.Core.Controllers;
 using BizFlow.Core.Internal;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz.Spi;
 using System.Reflection;
@@ -27,6 +28,7 @@ namespace BizFlow.Core.Services.DI
             services.AddMvcCore()
                 .AddApplicationPart(assembly);
 
+            services.AddTransient<IStartupFilter, BizFlowStartupFilter>();
         }
     }
 }
