@@ -14,7 +14,7 @@ namespace BizFlow.Core.Internal
 
         public Task Execute(IJobExecutionContext context)
         {
-            logger.LogInformation("SampleJob executed at {0}", DateTime.Now);
+            logger.LogInformation($"{context.JobDetail.Description} SampleJob executed at {DateTime.Now}");
             return Task.CompletedTask;
         }
     }

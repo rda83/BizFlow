@@ -11,10 +11,16 @@ namespace BizFlow.Core.Internal
             return app =>
             {
                 next(app);
-                
-                var jobsManager = app.ApplicationServices.GetRequiredService<IJobsManager>();
-                jobsManager.CrerateJob("BizFlowJob",
-                    "0/10 * * * * ?");
+                using (var scope = app.ApplicationServices.CreateScope())
+                {
+                    var jobsManager = scope.ServiceProvider.GetRequiredService<IJobsManager>();
+                    var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
+
+                    foreach (var item in pipelineService.GetPipelines())
+                    {
+                        jobsManager.CrerateJob(item.Name, item.CronExpression);
+                    }
+                }
             };
         }
     }
