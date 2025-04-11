@@ -10,8 +10,42 @@ namespace BizFlow.Core.Services.DI
 {
     public static class ServiceRegistration
     {
-        public static void AddBizFlow(this IServiceCollection services)
+        public static void AddBizFlow(this IServiceCollection services,
+            params Assembly[] assemblies)
         {
+
+            #region Workers
+
+
+            var interfaceType = typeof(IBizFlowWorker);
+            foreach (var _assembly in assemblies)
+            {
+                var types = _assembly.GetTypes()
+                    .Where(t => t.IsClass
+                        && t.IsPublic
+                        && !t.IsAbstract
+                        && interfaceType.IsAssignableFrom(t));
+
+                foreach (var _type in types)
+                {
+                    var columnAttribute = (TypeOperationIdAttribute?)Attribute.GetCustomAttribute(
+                        _type, typeof(TypeOperationIdAttribute));
+
+
+                    if (columnAttribute != null && 
+                        !string.IsNullOrWhiteSpace(columnAttribute.TypeOperationId)) //TODO Необходима валидация TypeOperationId
+                    {
+                        services.AddKeyedScoped(_type, columnAttribute.TypeOperationId);
+                    }
+                    else
+                    {
+                        //TODO Информировать
+                    }
+                }
+            }
+            #endregion
+
+
             services.AddSingleton<BizFlowJob>();
             services.AddSingleton<IJobFactory, SingletonJobFactory>();
             services.AddSingleton<Internal.QuartzHostedService>();
