@@ -6,7 +6,13 @@ namespace BizFlow.Core
         public string Name { get; set; } = string.Empty;
         public string CronExpression { get; set; } = string.Empty;
 
-        //Указываем тип задачи, в соответствии с ней будет найден воркер
-        //      BizFlowWorker 1
+
+
+
+        public List<string> PipelineItems = new List<string>();
+            //public TypeOperation TypeOperation { get; set; }
+            //public int SortOrder { get; set; }
+            //public string Description { get; set; }
+            //public bool Blocked { get; set; }
     }
 }

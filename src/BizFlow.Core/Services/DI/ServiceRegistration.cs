@@ -3,6 +3,7 @@ using BizFlow.Core.Internal;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz.Spi;
+using Quartz.Util;
 using System.Reflection;
 
 
@@ -35,7 +36,7 @@ namespace BizFlow.Core.Services.DI
                     if (columnAttribute != null && 
                         !string.IsNullOrWhiteSpace(columnAttribute.TypeOperationId)) //TODO Необходима валидация TypeOperationId
                     {
-                        services.AddKeyedScoped(_type, columnAttribute.TypeOperationId);
+                        services.AddKeyedScoped(typeof(IBizFlowWorker), columnAttribute.TypeOperationId, _type);
                     }
                     else
                     {
@@ -46,7 +47,7 @@ namespace BizFlow.Core.Services.DI
             #endregion
 
 
-            services.AddSingleton<BizFlowJob>();
+            services.AddScoped<BizFlowJob>();
             services.AddSingleton<IJobFactory, SingletonJobFactory>();
             services.AddSingleton<Internal.QuartzHostedService>();
 

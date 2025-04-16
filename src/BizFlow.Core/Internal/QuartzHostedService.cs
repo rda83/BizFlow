@@ -60,6 +60,7 @@ namespace BizFlow.Core.Internal
 
             var job = JobBuilder
                 .Create(jobType)
+                //.StoreDurably()
                 .WithIdentity(name)
                 .WithDescription(name)
                 .SetJobData(jobDataMap)
