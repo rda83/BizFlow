@@ -13,12 +13,14 @@ namespace BizFlow.Core.Internal
                 next(app);
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
-                    var jobsManager = scope.ServiceProvider.GetRequiredService<IJobsManager>();
+                    var bizFlowJobManager = scope.ServiceProvider.GetRequiredService<BizFlowJobManager>();
                     var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
 
                     foreach (var item in pipelineService.GetPipelines())
                     {
-                        jobsManager.CrerateJob(item.Name, item.CronExpression);
+                        bizFlowJobManager.CrerateJob(item.Name, item.CronExpression)
+                            .GetAwaiter()
+                            .GetResult();
                     }
                 }
             };

@@ -5,15 +5,25 @@ using Quartz;
 namespace BizFlow.Core.Internal
 {
 
+    // Необходим рефакторинг в соответствии с современным состоянием библиотеки Quartz.Net
+    // !!! Quartz !!! Устарелость
+
+    //_logger.LogInformation($"Scope HashCode: {_dbContext.GetHashCode()}");
+    // При каждом выполнении будет разный HashCode для Scoped-сервиса.
+
     [DisallowConcurrentExecution] //возможно ли сделать два разных джоба?
     public class BizFlowJob : IJob
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IPipelineService _pipelineService;
+        
+
 
         private bool _isFirstStart = true;
 
-        public BizFlowJob(IServiceScopeFactory scopeFactory)
+        public BizFlowJob(IPipelineService pipelineService, IServiceScopeFactory scopeFactory)
         {
+            _pipelineService = pipelineService;
             _scopeFactory = scopeFactory;
         }
 
@@ -46,14 +56,18 @@ namespace BizFlow.Core.Internal
                 _isFirstStart = false;
             }
 
-            using (var scope = _scopeFactory.CreateScope())
-            {
-                //    var routineOperationRunner = scope.ServiceProvider.GetService<IRoutineOperationRunner>();
+            //using (var scope = _scopeFactory.CreateScope())
+            //{
+            //    var routineOperationRunner = scope.ServiceProvider.GetService<IRoutineOperationRunner>();
 
-                var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
+            //var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
 
-                var operationName = context.JobDetail.Key.Name;
-                if (context.Trigger is Quartz.Impl.Triggers.CronTriggerImpl)
+            //var operationName = context.JobDetail.Key.Name;
+
+            var tc = new TriggerContext();
+
+
+            if (context.Trigger is Quartz.Impl.Triggers.CronTriggerImpl)
                 {
                     //        if (!routineOpsServiceEnabled)
                     //            return Task.CompletedTask;
@@ -61,16 +75,16 @@ namespace BizFlow.Core.Internal
                     //        tc.LaunchId = Guid.NewGuid().ToString();
                     //        tc.RunUnblockedOnlyOps = RUN_UNBLOCKED_ONLY_OPS;
 
-                    //        var triggerName = ((Quartz.Impl.Triggers.AbstractTrigger)context.Trigger).Name;
-                    //        tc.TriggerName = triggerName;
+                            var triggerName = ((Quartz.Impl.Triggers.AbstractTrigger)context.Trigger).Name;
+                            tc.TriggerName = triggerName;
 
                     //        var cronExpression = ((Quartz.Impl.Triggers.CronTriggerImpl)context.Trigger).CronExpressionString!;
                     //        tc.CronExpression = cronExpression;
                 }
                 else if (context.Trigger is Quartz.Impl.Triggers.SimpleTriggerImpl)
                 {
-                    //        var trigger = ((Quartz.Impl.Triggers.SimpleTriggerImpl)context.Trigger);
-                    //        tc.TriggerName = trigger.Name;
+                            var trigger = ((Quartz.Impl.Triggers.SimpleTriggerImpl)context.Trigger);
+                            tc.TriggerName = trigger.Name;
 
                     //        tc.LaunchId = trigger.JobDataMap.GetString("launchId");
                     //        tc.CronExpression = trigger.JobDataMap.GetString("forTrigger");
@@ -82,20 +96,26 @@ namespace BizFlow.Core.Internal
                 }
 
 
-                var pipeline = pipelineService.GetPipeline(operationName);
+                var pipeline = _pipelineService.GetPipeline(tc.TriggerName); //Теперь мы не создаем на каждый пайплайн свой джоб, он один. теперь триггер == пайплайн. 
 
-                foreach (var item in pipeline.PipelineItems)
+            //1. Убрать комменты, сделать коммит.
+            //2. Сделать дальнейший план разработки.
+            //3. Сделать блок-схему с взаимодействием компонентов: пайплайны, воркеры, джобы, триггеры.
+
+            foreach (var item in pipeline.PipelineItems)
                 {
-
-                    IBizFlowWorker worker = scope.ServiceProvider.GetRequiredKeyedService<IBizFlowWorker>(item);
-                    worker.Run(new WorkerContext());
+                    using (var scope = _scopeFactory.CreateScope())
+                    {
+                        IBizFlowWorker worker = scope.ServiceProvider.GetRequiredKeyedService<IBizFlowWorker>(item);
+                        worker.Run(new WorkerContext());
+                    }
                 }
 
                 // Механизм отмены операции из RoutineOps, возможно использовать штатный токен
                 // Механизм отмены операции из BestPriceCalculationByStrategyWithSavingResultJob
 
                 //RunPipeline(pipeline);
-            }
+            //}
             return Task.CompletedTask;
         }
     }
