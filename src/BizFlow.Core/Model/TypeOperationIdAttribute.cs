@@ -1,5 +1,4 @@
-﻿
-namespace BizFlow.Core
+﻿namespace BizFlow.Core.Model
 {
     public class TypeOperationIdAttribute : Attribute
     {
@@ -7,7 +6,7 @@ namespace BizFlow.Core
 
         public TypeOperationIdAttribute(string typeOperationId)
         {
-            this.TypeOperationId = typeOperationId;
+            TypeOperationId = typeOperationId;
         }
     }
 }

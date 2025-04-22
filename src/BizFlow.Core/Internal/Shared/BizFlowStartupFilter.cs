@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using BizFlow.Core.Contracts;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BizFlow.Core.Internal
+namespace BizFlow.Core.Internal.Shared
 {
     class BizFlowStartupFilter : IStartupFilter
     {

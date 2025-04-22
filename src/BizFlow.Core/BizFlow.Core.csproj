@@ -14,4 +14,9 @@
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Internal\Features\" />
+    <Folder Include="Internal\Model\" />
+  </ItemGroup>
+
 </Project>

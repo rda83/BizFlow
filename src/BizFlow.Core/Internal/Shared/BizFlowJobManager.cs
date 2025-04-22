@@ -1,6 +1,6 @@
 ﻿using Quartz;
 
-namespace BizFlow.Core.Internal
+namespace BizFlow.Core.Internal.Shared
 {
     class BizFlowJobManager
     {
