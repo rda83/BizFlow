@@ -1,5 +1,6 @@
 ﻿using BizFlow.Core.Contracts;
 using BizFlow.Core.Controllers;
+using BizFlow.Core.Internal.Features.AddPipeline;
 using BizFlow.Core.Internal.Jobs;
 using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;
@@ -67,6 +68,7 @@ namespace BizFlow.Core.Services.DI
                 .AddApplicationPart(assembly);
             services.AddScoped<BizFlowJobManager>();
             services.AddScoped<PipelineExecutor>();
+            services.AddScoped<IAddPipelineHandler, AddPipelineHandler>();
             services.AddTransient<IStartupFilter, BizFlowStartupFilter>();
         }
     }

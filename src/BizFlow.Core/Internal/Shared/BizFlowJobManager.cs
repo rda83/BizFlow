@@ -1,14 +1,18 @@
-﻿using Quartz;
+﻿using BizFlow.Core.Contracts;
+using Quartz;
 
 namespace BizFlow.Core.Internal.Shared
 {
-    class BizFlowJobManager
+    public class BizFlowJobManager
     {
-        private readonly ISchedulerFactory _schedulerFactory;
+        private readonly ISchedulerFactory schedulerFactory;
+        private readonly IPipelineService pipelineService;
 
-        public BizFlowJobManager(ISchedulerFactory schedulerFactory)
+
+        public BizFlowJobManager(ISchedulerFactory schedulerFactory, IPipelineService pipelineService)
         {
-            _schedulerFactory = schedulerFactory;
+            this.schedulerFactory = schedulerFactory;
+            this.pipelineService = pipelineService;
         }
 
         //public async Task CrerateJob(string name, string cronExpression)
@@ -38,9 +42,9 @@ namespace BizFlow.Core.Internal.Shared
 
         //}
 
-        public async Task CrerateJob(string name, string cronExpression) //Теперь мы не создаем на каждый пайплайн свой джоб, он один. теперь триггер == пайплайн. 
+        public async Task CrerateTrigger(string name, string cronExpression) //Теперь мы не создаем на каждый пайплайн свой джоб, он один. теперь триггер == пайплайн. 
         {
-            var scheduler = await _schedulerFactory.GetScheduler();
+            var scheduler = await schedulerFactory.GetScheduler();
 
             var trigger = TriggerBuilder.Create()
                 .ForJob("bizFlowDefaultJob")

@@ -15,7 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Internal\Features\" />
     <Folder Include="Internal\Model\" />
   </ItemGroup>
 

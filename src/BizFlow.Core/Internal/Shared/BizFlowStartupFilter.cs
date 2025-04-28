@@ -19,7 +19,7 @@ namespace BizFlow.Core.Internal.Shared
 
                     foreach (var item in pipelineService.GetPipelines())
                     {
-                        bizFlowJobManager.CrerateJob(item.Name, item.CronExpression)
+                        bizFlowJobManager.CrerateTrigger(item.Name, item.CronExpression)
                             .GetAwaiter()
                             .GetResult();
                     }
