@@ -6,5 +6,6 @@ namespace BizFlow.Core.Contracts
     {
         IReadOnlyCollection<Pipeline> GetPipelines();
         Pipeline GetPipeline(string pipelineName);
+        Task AddPipelineAsync(Pipeline pipelineItem, CancellationToken cancellationToken = default);
     }
 }

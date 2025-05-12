@@ -16,9 +16,37 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
             this.pipelineService = pipelineService;
         }
 
-        public Task<BizFlowChangingResult> AddPipelineAsync(AddPipelineCommand command)
+        public async Task<BizFlowChangingResult> AddPipelineAsync(AddPipelineCommand command,
+            CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var result = new BizFlowChangingResult();
+
+            // Существует ли операция
+            // Проверка параметров
+
+
+            var pipeline = new Pipeline();
+            pipeline.Name = command.Name;
+            pipeline.CronExpression = command.CronExpression;
+            pipeline.Description = command.Description;
+            pipeline.Blocked = command.Blocked;
+            pipeline.PipelineItems = command.PipelineItems.Select(i =>
+            {
+                var item = new PipelineItem();
+                item.TypeOperationId = i.TypeOperationId;
+                item.SortOrder = i.SortOrder;
+                item.Description = i.Description;
+                item.Blocked = i.Blocked;
+                item.Options = i.Options;
+                return item;
+            }).ToList();
+
+            await pipelineService.AddPipelineAsync(pipeline, cancellationToken);
+
+
+            // Создание триггера
+
+            return result;
         }
     }
 }
