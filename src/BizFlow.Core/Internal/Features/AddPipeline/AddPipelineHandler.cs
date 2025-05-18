@@ -1,19 +1,23 @@
 ﻿using BizFlow.Core.Contracts;
 using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;
+using Microsoft.Extensions.DependencyInjection;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace BizFlow.Core.Internal.Features.AddPipeline
 {
     internal class AddPipelineHandler : IAddPipelineHandler
     {
-        private readonly BizFlowJobManager bizFlowJobManager;
-        private readonly IPipelineService pipelineService;
+        private readonly BizFlowJobManager _bizFlowJobManager;
+        private readonly IPipelineService _pipelineService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
         public AddPipelineHandler(BizFlowJobManager bizFlowJobManager,
-            IPipelineService pipelineService)
+            IPipelineService pipelineService, IServiceScopeFactory scopeFactory)
         {
-            this.bizFlowJobManager = bizFlowJobManager;
-            this.pipelineService = pipelineService;
+            _bizFlowJobManager = bizFlowJobManager;
+            _pipelineService = pipelineService;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task<BizFlowChangingResult> AddPipelineAsync(AddPipelineCommand command,
@@ -21,9 +25,50 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
         {
             var result = new BizFlowChangingResult();
 
-            // Существует ли операция
-            // Проверка параметров
+            var pipelineNameExist = await _pipelineService.PipelineNameExist(command.Name, cancellationToken);
+            if (pipelineNameExist)
+            {
+                result.Success = false;
+                result.Message = $"Пайплайн с именем: {command.Name} уже существует.";
+                return result;
+            }
 
+
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                foreach (var item in command.PipelineItems)
+                {
+                    IBizFlowWorker worker = scope.ServiceProvider
+                        .GetRequiredKeyedService<IBizFlowWorker>(item.TypeOperationId);
+
+                    var checkResult = await worker.CheckOptions(item.Options);
+
+                    if (!checkResult.Success)
+                    {
+                        result.CheckItemsErrors.Add(new CheckItemsError()
+                        {
+                            TypeOperationId = item.TypeOperationId,
+                            SortOrder = item.SortOrder,
+                            Description = item.Description,
+                            Message = checkResult.Message,
+                        });
+                    }
+
+                }
+            }
+
+            if (result.CheckItemsErrors.Any())
+            {
+                result.Success = false;
+                result.Message = $"Обнаружены ошибки при проверке параметров элементов пайплайна.";
+                return result;
+            }
+
+
+
+
+
+            // Проверка параметров
 
             var pipeline = new Pipeline();
             pipeline.Name = command.Name;
@@ -41,7 +86,7 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
                 return item;
             }).ToList();
 
-            await pipelineService.AddPipelineAsync(pipeline, cancellationToken);
+            await _pipelineService.AddPipelineAsync(pipeline, cancellationToken);
 
 
             // Создание триггера
