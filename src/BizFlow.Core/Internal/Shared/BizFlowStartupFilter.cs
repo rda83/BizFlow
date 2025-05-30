@@ -7,7 +7,7 @@ namespace BizFlow.Core.Internal.Shared
 {
     class BizFlowStartupFilter : IStartupFilter
     {
-        public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+        public  Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
         {
             return app =>
             {
@@ -17,11 +17,14 @@ namespace BizFlow.Core.Internal.Shared
                     var bizFlowJobManager = scope.ServiceProvider.GetRequiredService<BizFlowJobManager>();
                     var pipelineService = scope.ServiceProvider.GetRequiredService<IPipelineService>();
 
-                    foreach (var item in pipelineService.GetPipelines())
+                    var pipelines = pipelineService.GetPipelinesAsync()
+                        .GetAwaiter().GetResult();
+
+                    foreach (var item in pipelines)
                     {
-                        //bizFlowJobManager.CrerateTrigger(item.Name, item.CronExpression)
-                        //    .GetAwaiter()
-                        //    .GetResult();
+                        bizFlowJobManager.CrerateTrigger(item.Name, item.CronExpression)
+                            .GetAwaiter()
+                            .GetResult();
                     }
                 }
             };

@@ -2,7 +2,6 @@
 using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace BizFlow.Core.Internal.Features.AddPipeline
 {
@@ -23,21 +22,24 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
         public async Task<BizFlowChangingResult> AddPipelineAsync(AddPipelineCommand command,
             CancellationToken cancellationToken = default)
         {
-            var result = new BizFlowChangingResult();
+            var result = new BizFlowChangingResult() { Success = true };
 
             var pipelineNameExist = await _pipelineService.PipelineNameExist(command.Name, cancellationToken);
             if (pipelineNameExist)
             {
                 result.Success = false;
-                result.Message = $"Пайплайн с именем: {command.Name} уже существует.";
+                result.Message = $"Пайплайн с именем: {command.Name} уже существует."; // TODO:i18n
                 return result;
             }
 
+            // TODO: check command.CronExpression
 
             using (var scope = _scopeFactory.CreateScope())
             {
                 foreach (var item in command.PipelineItems)
                 {
+                    var n = item.TypeOperationId;
+
                     IBizFlowWorker worker = scope.ServiceProvider
                         .GetRequiredKeyedService<IBizFlowWorker>(item.TypeOperationId);
 
@@ -53,24 +55,17 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
                             Message = checkResult.Message,
                         });
                     }
-
                 }
             }
 
             if (result.CheckItemsErrors.Any())
             {
                 result.Success = false;
-                result.Message = $"Обнаружены ошибки при проверке параметров элементов пайплайна.";
+                result.Message = $"Обнаружены ошибки при проверке параметров элементов пайплайна."; // TODO:i18n
                 return result;
             }
 
-
-
-
-
-            // Проверка параметров
-
-            var pipeline = new Pipeline();
+            var pipeline = new Pipeline(); // TODO: Builder
             pipeline.Name = command.Name;
             pipeline.CronExpression = command.CronExpression;
             pipeline.Description = command.Description;
@@ -87,9 +82,7 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
             }).ToList();
 
             await _pipelineService.AddPipelineAsync(pipeline, cancellationToken);
-
-
-            // Создание триггера
+            await _bizFlowJobManager.CrerateTrigger(command.Name, command.CronExpression);
 
             return result;
         }

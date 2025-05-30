@@ -37,52 +37,64 @@ namespace BizFlow.Core.Internal.Shared
             _scopeFactory = scopeFactory;
         }
 
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
             //IJobExecutionContext/CancellationToken
 
             var triggerName = string.Empty;
             if (context.Trigger is Quartz.Impl.Triggers.CronTriggerImpl)
             {
-                //        if (!routineOpsServiceEnabled)
-                //            return Task.CompletedTask;
-
-                //        tc.LaunchId = Guid.NewGuid().ToString();
-                //        tc.RunUnblockedOnlyOps = RUN_UNBLOCKED_ONLY_OPS;
-
                 triggerName = ((Quartz.Impl.Triggers.AbstractTrigger)context.Trigger).Name;
-
-                //        var cronExpression = ((Quartz.Impl.Triggers.CronTriggerImpl)context.Trigger).CronExpressionString!;
-                //        tc.CronExpression = cronExpression;
             }
             else if (context.Trigger is Quartz.Impl.Triggers.SimpleTriggerImpl)
             {
                 var trigger = (Quartz.Impl.Triggers.SimpleTriggerImpl)context.Trigger;
                 triggerName = trigger.Name;
-
-                //        tc.LaunchId = trigger.JobDataMap.GetString("launchId");
-                //        tc.CronExpression = trigger.JobDataMap.GetString("forTrigger");
-                //        tc.RunUnblockedOnlyOps = trigger.JobDataMap.GetBoolean("runUnblockedOnlyOps");
             }
             else
             {
                 throw new ArgumentException($"Unknown trigger type. [{context.Trigger.GetType()}]");
             }
 
-            var pipeline = _pipelineService.GetPipeline(triggerName);
-
-            foreach (var item in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
+            try
             {
-                using (var scope = _scopeFactory.CreateScope())
-                {
-                    IBizFlowWorker worker = scope.ServiceProvider
-                        .GetRequiredKeyedService<IBizFlowWorker>(item.TypeOperationId);
+                var pipeline = await _pipelineService.GetPipelineAsync(triggerName); // TODO: check null
 
-                    worker.Run(new WorkerContext());
+                if (pipeline == null)
+                {
+                    // TODO Журнал, логирование
+                    return;
+                }
+                              
+                if (pipeline!.Blocked)
+                {
+                    // TODO Журнал, логирование
+                    return;
+                }
+
+                foreach (var item in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
+                {
+                    if (item.Blocked)
+                    {
+                        // TODO Журнал, логирование
+                        continue;
+                    }
+
+                    using (var scope = _scopeFactory.CreateScope())
+                    {
+                        IBizFlowWorker worker = scope.ServiceProvider
+                            .GetRequiredKeyedService<IBizFlowWorker>(item.TypeOperationId);
+
+                        //TODO new WorkerContext()
+                        await worker.Run(new WorkerContext());
+                    }
                 }
             }
-
-            return Task.CompletedTask;
+            catch (Exception)
+            {
+                // TODO Журнал, логирование
+                throw;
+            }
         }
     }
 }

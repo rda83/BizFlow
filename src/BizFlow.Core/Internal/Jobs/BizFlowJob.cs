@@ -14,7 +14,7 @@ namespace BizFlow.Core.Internal.Jobs
             _pipelineExecutor = pipelineExecutor;
         }
 
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
             //TODO Код был для singletone
             if (_isFirstStart)
@@ -23,10 +23,8 @@ namespace BizFlow.Core.Internal.Jobs
                 _isFirstStart = false;
             }
 
-            _pipelineExecutor.Execute(context);
+            await _pipelineExecutor.Execute(context);
 
-
-            return Task.CompletedTask;
         }
     }
 }
