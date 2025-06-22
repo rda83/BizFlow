@@ -38,8 +38,6 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
             {
                 foreach (var item in command.PipelineItems)
                 {
-                    var n = item.TypeOperationId;
-
                     IBizFlowWorker worker = scope.ServiceProvider
                         .GetRequiredKeyedService<IBizFlowWorker>(item.TypeOperationId);
 

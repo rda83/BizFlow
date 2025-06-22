@@ -17,11 +17,11 @@ namespace BizFlow.Core.Internal.Jobs
         public async Task Execute(IJobExecutionContext context)
         {
             //TODO Код был для singletone
-            if (_isFirstStart)
-            {
-                Task.Delay(60000).GetAwaiter().GetResult();
-                _isFirstStart = false;
-            }
+            //if (_isFirstStart)
+            //{
+            //    Task.Delay(60000).GetAwaiter().GetResult();
+            //    _isFirstStart = false;
+            //}
 
             await _pipelineExecutor.Execute(context);
 

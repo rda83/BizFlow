@@ -72,9 +72,11 @@ namespace BizFlow.Core.Internal.Shared
                     return;
                 }
 
-                foreach (var item in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
+
+                var launchId = Guid.NewGuid().ToString();
+                foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
                 {
-                    if (item.Blocked)
+                    if (pipelineItem.Blocked)
                     {
                         // TODO Журнал, логирование
                         continue;
@@ -83,10 +85,18 @@ namespace BizFlow.Core.Internal.Shared
                     using (var scope = _scopeFactory.CreateScope())
                     {
                         IBizFlowWorker worker = scope.ServiceProvider
-                            .GetRequiredKeyedService<IBizFlowWorker>(item.TypeOperationId);
+                            .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
 
-                        //TODO new WorkerContext()
-                        await worker.Run(new WorkerContext());
+                        var workerContext = new WorkerContext();
+                        workerContext.LaunchId = launchId;
+                        workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
+                        workerContext.PipelineName = pipeline.Name;
+                        workerContext.CronExpression = pipeline.CronExpression;
+                        workerContext.CancellationToken = context.CancellationToken;
+                        workerContext.Options = pipelineItem.Options;
+
+                        // TODO Исключение может возникнуть здесь
+                        await worker.Run(workerContext);
                     }
                 }
             }
