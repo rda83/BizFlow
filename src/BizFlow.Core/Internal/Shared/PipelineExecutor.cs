@@ -30,16 +30,21 @@ namespace BizFlow.Core.Internal.Shared
     {
         private readonly IPipelineService _pipelineService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IBizFlowJournal _journal;
 
-        public PipelineExecutor(IPipelineService pipelineService, IServiceScopeFactory scopeFactory)
+        public PipelineExecutor(IPipelineService pipelineService, IServiceScopeFactory scopeFactory,
+            IBizFlowJournal journal)
         {
             _pipelineService = pipelineService;
             _scopeFactory = scopeFactory;
+            _journal = journal;
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
             //IJobExecutionContext/CancellationToken
+
+            var launchId = Guid.NewGuid().ToString();
 
             var triggerName = string.Empty;
             if (context.Trigger is Quartz.Impl.Triggers.CronTriggerImpl)
@@ -58,51 +63,127 @@ namespace BizFlow.Core.Internal.Shared
 
             try
             {
-                var pipeline = await _pipelineService.GetPipelineAsync(triggerName); // TODO: check null
-
+                var pipeline = await _pipelineService.GetPipelineAsync(triggerName);
+                
                 if (pipeline == null)
                 {
-                    // TODO Журнал, логирование
+                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                    {
+                        Period = DateTime.Now,
+                        PipelineName = string.Empty,
+                        ItemDescription = string.Empty,
+                        ItemSortOrder = 0,
+                        TypeAction = TypeBizFlowJournaAction.Error,
+                        TypeOperationId = string.Empty,
+                        LaunchId = launchId,
+                        Message = $"Не найден элемент для исполнения: {triggerName}", //TODO i18n
+                        Trigger = string.Empty,
+                    });
                     return;
                 }
                               
                 if (pipeline!.Blocked)
                 {
-                    // TODO Журнал, логирование
+                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                    {
+                        Period = DateTime.Now,
+                        PipelineName = pipeline.Name,
+                        ItemDescription = string.Empty,
+                        ItemSortOrder = 0,
+                        TypeAction = TypeBizFlowJournaAction.BlockedPipeline,
+                        TypeOperationId = string.Empty,
+                        LaunchId = launchId,
+                        Message = string.Empty,
+                        Trigger = string.Empty,
+                    });
                     return;
                 }
 
-
-                var launchId = Guid.NewGuid().ToString();
                 foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
                 {
+                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                    {
+                        Period = DateTime.Now,
+                        PipelineName = pipeline.Name,
+                        ItemDescription = pipelineItem.Description,
+                        ItemSortOrder = pipelineItem.SortOrder,
+                        TypeAction = TypeBizFlowJournaAction.Start,
+                        TypeOperationId = pipelineItem.TypeOperationId,
+                        LaunchId = launchId,
+                        Message = string.Empty,
+                        Trigger = pipeline.CronExpression,
+                    });
+
                     if (pipelineItem.Blocked)
                     {
-                        // TODO Журнал, логирование
+                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                        {
+                            Period = DateTime.Now,
+                            PipelineName = pipeline.Name,
+                            ItemDescription = pipelineItem.Description,
+                            ItemSortOrder = pipelineItem.SortOrder,
+                            TypeAction = TypeBizFlowJournaAction.BlockedPipelineItem,
+                            TypeOperationId = pipelineItem.TypeOperationId,
+                            LaunchId = launchId,
+                            Message = string.Empty,
+                            Trigger = pipeline.CronExpression,
+                        });
+
                         continue;
                     }
 
-                    using (var scope = _scopeFactory.CreateScope())
+                    try
                     {
-                        IBizFlowWorker worker = scope.ServiceProvider
-                            .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
+                        using (var scope = _scopeFactory.CreateScope())
+                        {
+                            IBizFlowWorker worker = scope.ServiceProvider
+                                .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
 
-                        var workerContext = new WorkerContext();
-                        workerContext.LaunchId = launchId;
-                        workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
-                        workerContext.PipelineName = pipeline.Name;
-                        workerContext.CronExpression = pipeline.CronExpression;
-                        workerContext.CancellationToken = context.CancellationToken;
-                        workerContext.Options = pipelineItem.Options;
+                            var workerContext = new WorkerContext();
+                            workerContext.LaunchId = launchId;
+                            workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
+                            workerContext.PipelineName = pipeline.Name;
+                            workerContext.CronExpression = pipeline.CronExpression;
+                            workerContext.CancellationToken = context.CancellationToken;
+                            workerContext.Options = pipelineItem.Options;
 
-                        // TODO Исключение может возникнуть здесь
-                        await worker.Run(workerContext);
+                            await worker.Run(workerContext);
+                        }
+
+                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                        {
+                            Period = DateTime.Now,
+                            PipelineName = pipeline.Name,
+                            ItemDescription = pipelineItem.Description,
+                            ItemSortOrder = pipelineItem.SortOrder,
+                            TypeAction = TypeBizFlowJournaAction.Success,
+                            TypeOperationId = pipelineItem.TypeOperationId,
+                            LaunchId = launchId,
+                            Message = string.Empty,
+                            Trigger = pipeline.CronExpression,
+                        });
+                    }
+                    catch (Exception)
+                    {
+                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                        {
+                            Period = DateTime.Now,
+                            PipelineName = pipeline.Name,
+                            ItemDescription = pipelineItem.Description,
+                            ItemSortOrder = pipelineItem.SortOrder,
+                            TypeAction = TypeBizFlowJournaAction.Error,
+                            TypeOperationId = pipelineItem.TypeOperationId,
+                            LaunchId = launchId,
+                            Message = string.Empty,
+                            Trigger = pipeline.CronExpression,
+                        });
+
+                        throw;
                     }
                 }
             }
             catch (Exception)
-            {
-                // TODO Журнал, логирование
+            {                
                 throw;
             }
         }
