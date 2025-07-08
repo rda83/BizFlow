@@ -8,5 +8,6 @@ namespace BizFlow.Core.Contracts
         Task<Pipeline?> GetPipelineAsync(string pipelineName, CancellationToken cancellationToken = default);
         Task AddPipelineAsync(Pipeline pipelineItem, CancellationToken cancellationToken = default);
         Task<bool> PipelineNameExist(string pipelineName, CancellationToken cancellationToken = default);
+        Task DeletePipelineAsync(string pipelineName, CancellationToken cancellationToken = default);
     }
 }

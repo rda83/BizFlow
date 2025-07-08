@@ -1,5 +1,6 @@
 ﻿using BizFlow.Core.Contracts;
 using BizFlow.Core.Internal.Features.AddPipeline;
+using BizFlow.Core.Internal.Features.DeletePipeline;
 using BizFlow.Core.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -10,14 +11,7 @@ namespace BizFlow.Core.Controllers
     [Route("bizFlow")]
     public class BizFlowController : ControllerBase
     {
-        private readonly IAddPipelineHandler _addPipelineHandler;
-        private readonly IBizFlowJournal _journal;
-
-        public BizFlowController(IAddPipelineHandler addPipelineHandler, IBizFlowJournal journal) 
-        { 
-            _addPipelineHandler = addPipelineHandler;
-            _journal = journal;
-        }
+        public BizFlowController() { }
 
         /// <summary>
         /// Добавление нового пайплайна
@@ -28,14 +22,40 @@ namespace BizFlow.Core.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [Consumes("application/json")]
         [HttpPost("pipeline")]
-        public async Task<IActionResult> CreateOperationAsync(AddPipelineCommand command)
+        public async Task<IActionResult> CreatePipelineAsync(AddPipelineCommand command,
+            [FromServices] IAddPipelineHandler addPipelineHandler)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            var result = await _addPipelineHandler.AddPipelineAsync(command);
+            var result = await addPipelineHandler.AddPipelineAsync(command);
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Удаление пайплайна
+        /// </summary>
+        /// <returns>Результат выполнения операции</returns>
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BizFlowChangingResult))]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpDelete("pipeline/{pipelineName}")]
+        public async Task<IActionResult> DeletePipeline([FromRoute] string pipelineName,
+            [FromServices] IDeletePipelineHandler deletePipelineHandler)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await deletePipelineHandler.DeletePipelineAsync(new DeletePipelineCommand()
+            {
+                Name = pipelineName,
+            });
 
             return Ok(result);
         }
@@ -50,6 +70,7 @@ namespace BizFlow.Core.Controllers
         [ProducesResponseType(typeof(PagedResponse<BizFlowJournalRecord>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetJournalRecordsPaged(
+            [FromServices] IBizFlowJournal journal,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10)
         {
@@ -58,7 +79,7 @@ namespace BizFlow.Core.Controllers
                 if (pageNumber < 1 || pageSize < 1)
                     return BadRequest("Номер страницы и размер страницы должны быть больше 0");
 
-                var records = await _journal.GetPagedAsync(pageNumber, pageSize);
+                var records = await journal.GetPagedAsync(pageNumber, pageSize);
 
                 var response = new PagedResponse<BizFlowJournalRecord>()
                 {

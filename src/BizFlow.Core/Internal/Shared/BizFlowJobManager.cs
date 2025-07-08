@@ -1,22 +1,21 @@
-﻿using BizFlow.Core.Contracts;
-using Quartz;
+﻿using Quartz;
+using Quartz.Impl.Matchers;
 
 namespace BizFlow.Core.Internal.Shared
 {
     public class BizFlowJobManager
     {
         private readonly ISchedulerFactory schedulerFactory;
-        private readonly IPipelineService pipelineService;
 
-        public BizFlowJobManager(ISchedulerFactory schedulerFactory, IPipelineService pipelineService)
+        public BizFlowJobManager(ISchedulerFactory schedulerFactory)
         {
             this.schedulerFactory = schedulerFactory;
-            this.pipelineService = pipelineService;
         }
 
-        public async Task CrerateTrigger(string name, string cronExpression)
+        public async Task CrerateTrigger(string name, string cronExpression,
+            CancellationToken cancellationToken = default)
         {
-            var scheduler = await schedulerFactory.GetScheduler();
+            var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
 
             var trigger = TriggerBuilder.Create()
                 .ForJob("bizFlowDefaultJob")
@@ -24,7 +23,21 @@ namespace BizFlow.Core.Internal.Shared
                 .WithCronSchedule(cronExpression)
                 .Build();
 
-            await scheduler.ScheduleJob(trigger);
+            await scheduler.ScheduleJob(trigger, cancellationToken);
+        }
+
+        public async Task DeleteTrigger(string pipelineName,
+            CancellationToken cancellationToken = default)
+        {
+            var scheduler = await schedulerFactory.GetScheduler();
+
+            var allTriggerKeys = await scheduler.GetTriggerKeys(
+                GroupMatcher<TriggerKey>.AnyGroup(), cancellationToken);
+
+            var triggerKey = allTriggerKeys.Where(i => i.Name == pipelineName).FirstOrDefault() 
+                ?? throw new InvalidOperationException($"TriggerKey with name '{pipelineName}' not found."); // TODO:i18n
+
+            await scheduler.UnscheduleJob(triggerKey, cancellationToken);
         }
     }
 }
