@@ -1,6 +1,7 @@
 ﻿using BizFlow.Core.Contracts;
 using BizFlow.Core.Internal.Features.AddPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
+using BizFlow.Core.Internal.Features.StartNowPipeline;
 using BizFlow.Core.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -94,6 +95,27 @@ namespace BizFlow.Core.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Немедленный запуск пайплайна
+        /// </summary>
+        /// <returns>Результат выполнения операции</returns>
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BizFlowChangingResult))]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpPost("pipeline/{pipelineName}/startNow")]
+        public async Task<IActionResult> StartNowPipeline([FromRoute] string pipelineName,
+            [FromServices] IStartNowPipelineHandler handler)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await handler.StartNowPipelineAsync(new StartNowPipelineCommand() { Name = pipelineName } );
+            return Ok(result);
         }
     }
 }

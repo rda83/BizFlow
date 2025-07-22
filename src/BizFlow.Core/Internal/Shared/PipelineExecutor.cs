@@ -43,18 +43,21 @@ namespace BizFlow.Core.Internal.Shared
         public async Task Execute(IJobExecutionContext context)
         {
             //IJobExecutionContext/CancellationToken
+            string launchId = string.Empty;
+            string pipelineName = string.Empty;
+            bool isStartNowPipeline = false;
 
-            var launchId = Guid.NewGuid().ToString();
-
-            var triggerName = string.Empty;
             if (context.Trigger is Quartz.Impl.Triggers.CronTriggerImpl)
             {
-                triggerName = ((Quartz.Impl.Triggers.AbstractTrigger)context.Trigger).Name;
+                launchId = Guid.NewGuid().ToString();
+                pipelineName = ((Quartz.Impl.Triggers.AbstractTrigger)context.Trigger).Name;
             }
             else if (context.Trigger is Quartz.Impl.Triggers.SimpleTriggerImpl)
             {
                 var trigger = (Quartz.Impl.Triggers.SimpleTriggerImpl)context.Trigger;
-                triggerName = trigger.Name;
+                launchId = trigger.JobDataMap.GetString("launchId");
+                pipelineName = trigger.JobDataMap.GetString("pipelineName");
+                isStartNowPipeline = true;
             }
             else
             {
@@ -63,7 +66,7 @@ namespace BizFlow.Core.Internal.Shared
 
             try
             {
-                var pipeline = await _pipelineService.GetPipelineAsync(triggerName);
+                var pipeline = await _pipelineService.GetPipelineAsync(pipelineName);
                 
                 if (pipeline == null)
                 {
@@ -76,8 +79,9 @@ namespace BizFlow.Core.Internal.Shared
                         TypeAction = TypeBizFlowJournaAction.Error,
                         TypeOperationId = string.Empty,
                         LaunchId = launchId,
-                        Message = $"Не найден элемент для исполнения: {triggerName}", //TODO i18n
+                        Message = $"Не найден элемент для исполнения: {pipelineName}", //TODO i18n
                         Trigger = string.Empty,
+                        IsStartNowPipeline = isStartNowPipeline,
                     });
                     return;
                 }
@@ -95,6 +99,7 @@ namespace BizFlow.Core.Internal.Shared
                         LaunchId = launchId,
                         Message = string.Empty,
                         Trigger = string.Empty,
+                        IsStartNowPipeline = isStartNowPipeline,
                     });
                     return;
                 }
@@ -112,6 +117,7 @@ namespace BizFlow.Core.Internal.Shared
                         LaunchId = launchId,
                         Message = string.Empty,
                         Trigger = pipeline.CronExpression,
+                        IsStartNowPipeline = isStartNowPipeline,
                     });
 
                     if (pipelineItem.Blocked)
@@ -128,7 +134,6 @@ namespace BizFlow.Core.Internal.Shared
                             Message = string.Empty,
                             Trigger = pipeline.CronExpression,
                         });
-
                         continue;
                     }
 
@@ -146,6 +151,7 @@ namespace BizFlow.Core.Internal.Shared
                             workerContext.CronExpression = pipeline.CronExpression;
                             workerContext.CancellationToken = context.CancellationToken;
                             workerContext.Options = pipelineItem.Options;
+                            workerContext.IsStartNowPipeline = isStartNowPipeline;
 
                             await worker.Run(workerContext);
                         }
@@ -161,6 +167,7 @@ namespace BizFlow.Core.Internal.Shared
                             LaunchId = launchId,
                             Message = string.Empty,
                             Trigger = pipeline.CronExpression,
+                            IsStartNowPipeline = isStartNowPipeline,
                         });
                     }
                     catch (Exception)
@@ -176,6 +183,7 @@ namespace BizFlow.Core.Internal.Shared
                             LaunchId = launchId,
                             Message = string.Empty,
                             Trigger = pipeline.CronExpression,
+                            IsStartNowPipeline = isStartNowPipeline,
                         });
 
                         throw;

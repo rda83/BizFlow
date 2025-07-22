@@ -10,5 +10,6 @@ namespace BizFlow.Core.Model
         public string CronExpression { get; set; }
         public CancellationToken CancellationToken { get; set; }
         public JsonElement Options { get; set; }
+        public bool IsStartNowPipeline { get; set; }
     }
 }

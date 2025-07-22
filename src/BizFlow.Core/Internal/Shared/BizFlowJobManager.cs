@@ -1,4 +1,5 @@
-﻿using Quartz;
+﻿using Microsoft.AspNetCore.Mvc;
+using Quartz;
 using Quartz.Impl.Matchers;
 
 namespace BizFlow.Core.Internal.Shared
@@ -38,6 +39,55 @@ namespace BizFlow.Core.Internal.Shared
                 ?? throw new InvalidOperationException($"TriggerKey with name '{pipelineName}' not found."); // TODO:i18n
 
             await scheduler.UnscheduleJob(triggerKey, cancellationToken);
+        }
+
+        public async Task StartNow(string pipelineName, string launchId,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(pipelineName))
+            {
+                throw new ArgumentNullException(
+                    nameof(pipelineName),
+                    "Имя пайплайна не может быть null, пустым или состоять только из пробелов." // TODO:i18n
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(launchId))
+            {
+                throw new ArgumentNullException(
+                    nameof(launchId),
+                    "Идентификатор запуска не может быть null, пустым или состоять только из пробелов." // TODO:i18n
+                );
+            }
+
+            var triggerName = $"StartNowTrigger-{pipelineName}";
+            var isTriggerExists = await TriggerCheckExists(triggerName, cancellationToken);
+            if (isTriggerExists)
+            {
+                throw new Exception($"Триггер с ключом: {triggerName} уже существует.");
+            }
+
+            var trigger = TriggerBuilder
+                .Create()
+                .ForJob("bizFlowDefaultJob")
+                .WithIdentity(triggerName)
+                .UsingJobData("launchId", launchId)
+                .UsingJobData("pipelineName", pipelineName)
+                .StartNow()
+                .Build();
+
+            var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
+            await scheduler.ScheduleJob(trigger, cancellationToken);
+        }
+
+        public async Task<bool> TriggerCheckExists(string triggerName,
+            CancellationToken cancellationToken = default)
+        {
+            var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
+
+            var triggerKey = new TriggerKey(triggerName);
+            var result = await scheduler.CheckExists(triggerKey);
+            return result;
         }
     }
 }
