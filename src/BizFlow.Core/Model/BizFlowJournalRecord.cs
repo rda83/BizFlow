@@ -5,6 +5,7 @@ namespace BizFlow.Core.Model
     {
         public DateTime Period { get; set; }
         public string PipelineName { get; set; }
+        public long ItemId { get; set; }
         public string ItemDescription { get; set; }
         public int ItemSortOrder { get; set; }
         public TypeBizFlowJournaAction TypeAction { get; set; }

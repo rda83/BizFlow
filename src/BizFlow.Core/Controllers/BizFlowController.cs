@@ -2,6 +2,7 @@
 using BizFlow.Core.Internal.Features.AddPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
 using BizFlow.Core.Internal.Features.StartNowPipeline;
+using BizFlow.Core.Internal.Features.StatusPipeline;
 using BizFlow.Core.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -115,6 +116,27 @@ namespace BizFlow.Core.Controllers
             }
 
             var result = await handler.StartNowPipelineAsync(new StartNowPipelineCommand() { Name = pipelineName } );
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Получение статуса выполнения пайплайна
+        /// </summary>
+        /// <returns>Статус выполнения пайплайна</returns>
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(StatusPipelineResult))]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpPost("pipeline/{pipelineName}/statusPipeline")]
+        public async Task<IActionResult> StatusPipeline([FromRoute] string pipelineName,
+            [FromServices] IStatusPipelineHandler handler)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await handler.StatusPipeline(new StatusPipelineCommand() { Name = pipelineName });
             return Ok(result);
         }
     }
