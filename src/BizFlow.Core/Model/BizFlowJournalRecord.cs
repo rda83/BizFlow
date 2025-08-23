@@ -8,7 +8,7 @@ namespace BizFlow.Core.Model
         public long ItemId { get; set; }
         public string ItemDescription { get; set; }
         public int ItemSortOrder { get; set; }
-        public TypeBizFlowJournaAction TypeAction { get; set; }
+        public TypeBizFlowJournalAction TypeAction { get; set; }
         public string TypeOperationId { get; set; }
         public string LaunchId { get; set; }
         public string Message { get; set; }

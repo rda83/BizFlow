@@ -1,7 +1,7 @@
 ﻿
 namespace BizFlow.Core.Model
 {
-    public enum TypeBizFlowJournaAction
+    public enum TypeBizFlowJournalAction
     {
         Start,
         Success,

@@ -8,20 +8,20 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
         private readonly IPipelineService _pipelineService;
         private readonly IBizFlowJournal _bizFlowJournal;
 
-        private static readonly HashSet<TypeBizFlowJournaAction> _startStatuses = new()
+        private static readonly HashSet<TypeBizFlowJournalAction> _startStatuses = new()
         {
-            TypeBizFlowJournaAction.Start
+            TypeBizFlowJournalAction.Start
         };
 
-        private static readonly HashSet<TypeBizFlowJournaAction> _finishedStatuses = new()
+        private static readonly HashSet<TypeBizFlowJournalAction> _finishedStatuses = new()
         {
-            TypeBizFlowJournaAction.Success,
-            TypeBizFlowJournaAction.Error
+            TypeBizFlowJournalAction.Success,
+            TypeBizFlowJournalAction.Error
         };
 
-        private static readonly HashSet<TypeBizFlowJournaAction> _successStatuses = new()
+        private static readonly HashSet<TypeBizFlowJournalAction> _successStatuses = new()
         {
-            TypeBizFlowJournaAction.Success
+            TypeBizFlowJournalAction.Success
         };
 
         public StatusPipelineHandler(IPipelineService pipelineService, IBizFlowJournal bizFlowJournal)
