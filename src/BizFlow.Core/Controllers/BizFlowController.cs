@@ -1,5 +1,6 @@
 ﻿using BizFlow.Core.Contracts;
 using BizFlow.Core.Internal.Features.AddPipeline;
+using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
 using BizFlow.Core.Internal.Features.StartNowPipeline;
 using BizFlow.Core.Internal.Features.StatusPipeline;
@@ -138,6 +139,50 @@ namespace BizFlow.Core.Controllers
 
             var result = await handler.StatusPipeline(new StatusPipelineCommand() { Name = pipelineName });
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Отправка запроса для завершения пайплайна
+        /// </summary>
+        /// <returns>Результат операции</returns>
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BizFlowChangingResult))]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpPost("pipeline/cancelPipeline")]
+        public async Task<IActionResult> CancelPipeline([FromBody] CancelPipelineCommand cancelPipelineCommand,
+            [FromServices] ICancelPipelineHandler handler)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await handler.CancelPipeline(cancelPipelineCommand);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Закрыть запрос на завершение пайплайна
+        /// </summary>
+        /// <returns>Результат операции</returns>
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BizFlowChangingResult))]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpPost("pipeline/closeCancellationRequest/{requestId}")]
+        public async Task<IActionResult> CloseCancellationRequest([FromRoute] long requestId,
+            [FromServices] ICancelPipelineHandler handler)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            throw new NotImplementedException();
+
+            //var result = await handler.CancelPipeline(cancelPipelineCommand);
+            //return Ok(result);
         }
     }
 }

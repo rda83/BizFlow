@@ -2,7 +2,7 @@
 
 namespace BizFlow.Core.Internal.Features.CancelPipeline
 {
-    internal interface ICancelPipelineHandler
+    public interface ICancelPipelineHandler
     {
         Task<BizFlowChangingResult> CancelPipeline(CancelPipelineCommand command,
             CancellationToken cancellationToken = default);

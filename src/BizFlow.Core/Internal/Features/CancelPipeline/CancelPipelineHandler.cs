@@ -3,7 +3,7 @@ using BizFlow.Core.Model;
 
 namespace BizFlow.Core.Internal.Features.CancelPipeline
 {
-    internal class CancelPipelineHandler : ICancelPipelineHandler
+    public class CancelPipelineHandler : ICancelPipelineHandler
     {
         private readonly IPipelineService _pipelineService;
         private readonly ICancelPipelineRequestService _cancelPipelineRequestService;
