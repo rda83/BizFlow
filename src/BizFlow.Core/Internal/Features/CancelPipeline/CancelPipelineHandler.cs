@@ -41,5 +41,14 @@ namespace BizFlow.Core.Internal.Features.CancelPipeline
 
             return result;
         }
+
+        public async Task<BizFlowChangingResult> CloseCancellationRequest(CloseCancelPipelineCommand command, 
+            CancellationToken cancellationToken = default)
+        {
+            var result = new BizFlowChangingResult() { Success = true };
+
+            await _cancelPipelineRequestService.SetExecutedAsync(command.CancelPipeRequestId, command.Message, cancellationToken);
+            return result;
+        }
     }
 }

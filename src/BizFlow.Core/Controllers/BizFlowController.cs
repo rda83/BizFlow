@@ -170,8 +170,8 @@ namespace BizFlow.Core.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [Consumes("application/json")]
-        [HttpPost("pipeline/closeCancellationRequest/{requestId}")]
-        public async Task<IActionResult> CloseCancellationRequest([FromRoute] long requestId,
+        [HttpPost("pipeline/closeCancellationRequest")]
+        public async Task<IActionResult> CloseCancellationRequest([FromBody] CloseCancelPipelineCommand command,
             [FromServices] ICancelPipelineHandler handler)
         {
             if (!ModelState.IsValid)
@@ -179,10 +179,8 @@ namespace BizFlow.Core.Controllers
                 return BadRequest(ModelState);
             }
 
-            throw new NotImplementedException();
-
-            //var result = await handler.CancelPipeline(cancelPipelineCommand);
-            //return Ok(result);
+            var result = await handler.CloseCancellationRequest(command);
+            return Ok(result);
         }
     }
 }

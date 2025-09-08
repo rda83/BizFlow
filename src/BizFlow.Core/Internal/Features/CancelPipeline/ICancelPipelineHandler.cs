@@ -6,5 +6,8 @@ namespace BizFlow.Core.Internal.Features.CancelPipeline
     {
         Task<BizFlowChangingResult> CancelPipeline(CancelPipelineCommand command,
             CancellationToken cancellationToken = default);
+
+        Task<BizFlowChangingResult> CloseCancellationRequest(CloseCancelPipelineCommand command,
+            CancellationToken cancellationToken = default);
     }
 }
