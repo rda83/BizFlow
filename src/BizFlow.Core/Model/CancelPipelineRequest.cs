@@ -3,6 +3,7 @@ namespace BizFlow.Core.Model
 {
     public class CancelPipelineRequest
     {
+        public long Id { get; set; }
         public string PipelineName { get; set; } = string.Empty;
         public DateTime ExpirationTime { get; set; }
         public string? Description { get; set; } = string.Empty;

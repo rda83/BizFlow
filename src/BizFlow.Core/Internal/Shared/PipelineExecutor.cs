@@ -3,6 +3,7 @@ using BizFlow.Core.Contracts;
 using BizFlow.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
+using Quartz.Impl.AdoJobStore.Common;
 
 namespace BizFlow.Core.Internal.Shared
 {
@@ -31,6 +32,8 @@ namespace BizFlow.Core.Internal.Shared
         private readonly IPipelineService _pipelineService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IBizFlowJournal _journal;
+
+        private const int DELAY_UPDATE_CANCELLATION_TOKEN = 5000;
 
         public PipelineExecutor(IPipelineService pipelineService, IServiceScopeFactory scopeFactory,
             IBizFlowJournal journal)
@@ -106,7 +109,35 @@ namespace BizFlow.Core.Internal.Shared
                     return;
                 }
 
-                foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
+
+                await ExecuteItems(pipeline, launchId, isStartNowPipeline, context);
+            }
+            catch (Exception)
+            {                
+                throw;
+            }
+        }
+
+        private async Task ExecuteItems(Pipeline pipeline, string launchId, bool isStartNowPipeline, IJobExecutionContext context)
+        {
+            foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
+            {
+                await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                {
+                    Period = DateTime.Now,
+                    PipelineName = pipeline.Name,
+                    ItemDescription = pipelineItem.Description,
+                    ItemSortOrder = pipelineItem.SortOrder,
+                    ItemId = pipelineItem.Id,
+                    TypeAction = TypeBizFlowJournalAction.Start,
+                    TypeOperationId = pipelineItem.TypeOperationId,
+                    LaunchId = launchId,
+                    Message = string.Empty,
+                    Trigger = pipeline.CronExpression,
+                    IsStartNowPipeline = isStartNowPipeline,
+                });
+
+                if (pipelineItem.Blocked)
                 {
                     await _journal.AddRecordAsync(new BizFlowJournalRecord()
                     {
@@ -115,7 +146,59 @@ namespace BizFlow.Core.Internal.Shared
                         ItemDescription = pipelineItem.Description,
                         ItemSortOrder = pipelineItem.SortOrder,
                         ItemId = pipelineItem.Id,
-                        TypeAction = TypeBizFlowJournalAction.Start,
+                        TypeAction = TypeBizFlowJournalAction.BlockedPipelineItem,
+                        TypeOperationId = pipelineItem.TypeOperationId,
+                        LaunchId = launchId,
+                        Message = string.Empty,
+                        Trigger = pipeline.CronExpression,
+                    });
+                    continue;
+                }
+
+                try
+                {
+                    using (var scope = _scopeFactory.CreateScope())
+                    {
+                        IBizFlowWorker worker = scope.ServiceProvider
+                            .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
+
+                        var workerContext = new WorkerContext();
+                        workerContext.LaunchId = launchId;
+                        workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
+                        workerContext.PipelineName = pipeline.Name;
+                        workerContext.CronExpression = pipeline.CronExpression;
+                        workerContext.CancellationToken = context.CancellationToken;
+                        workerContext.Options = pipelineItem.Options;
+                        workerContext.IsStartNowPipeline = isStartNowPipeline;
+
+                        await worker.Run(workerContext);
+                    }
+
+                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                    {
+                        Period = DateTime.Now,
+                        PipelineName = pipeline.Name,
+                        ItemDescription = pipelineItem.Description,
+                        ItemSortOrder = pipelineItem.SortOrder,
+                        ItemId = pipelineItem.Id,
+                        TypeAction = TypeBizFlowJournalAction.Success,
+                        TypeOperationId = pipelineItem.TypeOperationId,
+                        LaunchId = launchId,
+                        Message = string.Empty,
+                        Trigger = pipeline.CronExpression,
+                        IsStartNowPipeline = isStartNowPipeline,
+                    });
+                }
+                catch (Exception)
+                {
+                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                    {
+                        Period = DateTime.Now,
+                        PipelineName = pipeline.Name,
+                        ItemDescription = pipelineItem.Description,
+                        ItemSortOrder = pipelineItem.SortOrder,
+                        ItemId = pipelineItem.Id,
+                        TypeAction = TypeBizFlowJournalAction.Error,
                         TypeOperationId = pipelineItem.TypeOperationId,
                         LaunchId = launchId,
                         Message = string.Empty,
@@ -123,83 +206,31 @@ namespace BizFlow.Core.Internal.Shared
                         IsStartNowPipeline = isStartNowPipeline,
                     });
 
-                    if (pipelineItem.Blocked)
+                    throw;
+                }
+            }
+        }
+
+        private void UpdateCancellationTokenSource(CancellationTokenSource cts, string pipelineName)
+        {
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var cancelPipelineRequestService = scope.ServiceProvider.GetRequiredService<ICancelPipelineRequestService>();
+
+                while (!cts.IsCancellationRequested)
+                {
+                    Thread.Sleep(DELAY_UPDATE_CANCELLATION_TOKEN);
+
+                    var cancellationRequest = cancelPipelineRequestService.GetActiveRequest(pipelineName);
+
+                    if (cancellationRequest != null)
                     {
-                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                        {
-                            Period = DateTime.Now,
-                            PipelineName = pipeline.Name,
-                            ItemDescription = pipelineItem.Description,
-                            ItemSortOrder = pipelineItem.SortOrder,
-                            ItemId = pipelineItem.Id,
-                            TypeAction = TypeBizFlowJournalAction.BlockedPipelineItem,
-                            TypeOperationId = pipelineItem.TypeOperationId,
-                            LaunchId = launchId,
-                            Message = string.Empty,
-                            Trigger = pipeline.CronExpression,
-                        });
-                        continue;
-                    }
-
-                    try
-                    {
-                        using (var scope = _scopeFactory.CreateScope())
-                        {
-                            IBizFlowWorker worker = scope.ServiceProvider
-                                .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
-
-                            var workerContext = new WorkerContext();
-                            workerContext.LaunchId = launchId;
-                            workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
-                            workerContext.PipelineName = pipeline.Name;
-                            workerContext.CronExpression = pipeline.CronExpression;
-                            workerContext.CancellationToken = context.CancellationToken;
-                            workerContext.Options = pipelineItem.Options;
-                            workerContext.IsStartNowPipeline = isStartNowPipeline;
-
-                            await worker.Run(workerContext);
-                        }
-
-                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                        {
-                            Period = DateTime.Now,
-                            PipelineName = pipeline.Name,
-                            ItemDescription = pipelineItem.Description,
-                            ItemSortOrder = pipelineItem.SortOrder,
-                            ItemId = pipelineItem.Id,
-                            TypeAction = TypeBizFlowJournalAction.Success,
-                            TypeOperationId = pipelineItem.TypeOperationId,
-                            LaunchId = launchId,
-                            Message = string.Empty,
-                            Trigger = pipeline.CronExpression,
-                            IsStartNowPipeline = isStartNowPipeline,
-                        });
-                    }
-                    catch (Exception)
-                    {
-                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                        {
-                            Period = DateTime.Now,
-                            PipelineName = pipeline.Name,
-                            ItemDescription = pipelineItem.Description,
-                            ItemSortOrder = pipelineItem.SortOrder,
-                            ItemId = pipelineItem.Id,
-                            TypeAction = TypeBizFlowJournalAction.Error,
-                            TypeOperationId = pipelineItem.TypeOperationId,
-                            LaunchId = launchId,
-                            Message = string.Empty,
-                            Trigger = pipeline.CronExpression,
-                            IsStartNowPipeline = isStartNowPipeline,
-                        });
-
-                        throw;
+                        cancelPipelineRequestService.SetExecutedAsync(cancellationRequest.Id);
+                        cts.Cancel();
                     }
                 }
             }
-            catch (Exception)
-            {                
-                throw;
-            }
         }
+
     }
 }
