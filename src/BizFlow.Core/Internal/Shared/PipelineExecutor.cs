@@ -32,15 +32,17 @@ namespace BizFlow.Core.Internal.Shared
         private readonly IPipelineService _pipelineService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IBizFlowJournal _journal;
+        private readonly ICancelPipelineRequestService _cancelPipelineRequestService;
 
         private const int DELAY_UPDATE_CANCELLATION_TOKEN = 5000;
 
         public PipelineExecutor(IPipelineService pipelineService, IServiceScopeFactory scopeFactory,
-            IBizFlowJournal journal)
+            IBizFlowJournal journal, ICancelPipelineRequestService cancelPipelineRequestService)
         {
             _pipelineService = pipelineService;
             _scopeFactory = scopeFactory;
             _journal = journal;
+            _cancelPipelineRequestService = cancelPipelineRequestService;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -109,8 +111,55 @@ namespace BizFlow.Core.Internal.Shared
                     return;
                 }
 
+                var cancellationRequest = _cancelPipelineRequestService.GetActiveRequest(pipelineName);
 
-                await ExecuteItems(pipeline, launchId, isStartNowPipeline, context);
+                if (cancellationRequest == null)
+                {
+                    //Task.Run(() => UpdateCancellationTokenSource(new UpdateCancellationTokenSourceArgs()
+                    //{
+                    //    Cts = cts,
+                    //    CronExpression = tc.CronExpression,
+                    //    OperationName = tc.OperationName,
+                    //}));
+
+                    await ExecuteItems(pipeline, launchId, isStartNowPipeline, context);
+                }
+                else
+                {
+                    foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
+                    {
+                        var CancelOperationArgs = new CancelOperationArgs()
+                        {
+                            LaunchId = launchId,
+                            PipelineName = pipelineName,
+                            ItemDescription = pipelineItem.Description,
+                            ItemId = pipelineItem.Id,
+                            ItemSortOrder = pipelineItem.SortOrder,
+                            TypeOperationId = pipelineItem.TypeOperationId,
+                            Trigger = pipeline.CronExpression,
+                            IsStartNowPipeline = isStartNowPipeline,
+                        };
+
+
+                    }
+
+
+
+                    //_cancellationRequestData.SetCancellationRequestData(
+                    //    (cancellationRequest.ClosingByExpirationTimeOnly,
+                    //    cancellationRequest.Description, cancellationRequest.Id));
+
+                    //foreach (var item in operationItems)
+                    //{
+                    //    CancelOperation(new CancelOperationArgs()
+                    //    {
+                    //        Item = item,
+                    //        TriggerName = tc.TriggerName,
+                    //        LaunchId = tc.LaunchId,
+                    //    });
+                    //}
+                    //CancellationRequestSetExecuted();
+                }                   
             }
             catch (Exception)
             {                
@@ -232,5 +281,58 @@ namespace BizFlow.Core.Internal.Shared
             }
         }
 
+        //CancelOperationArgs args  IBizFlowJournal _journal
+        private async Task CancelOperation(CancelOperationArgs args)
+        {
+            using (var scope = _scopeFactory.CreateScope())
+            {
+
+                var journal = scope.ServiceProvider.GetRequiredService<IBizFlowJournal>();
+                
+                await journal.AddRecordAsync(new BizFlowJournalRecord()
+                {
+                    Period = DateTime.Now,
+                    PipelineName = args.PipelineName,
+                    ItemDescription = args.ItemDescription,
+                    ItemSortOrder = args.ItemSortOrder,
+                    ItemId = args.ItemId,
+                    TypeAction = TypeBizFlowJournalAction.Canceled,
+                    TypeOperationId = args.TypeOperationId,
+                    LaunchId = args.LaunchId,
+                    Message = $"Не найден элемент для исполнения: {pipelineName}", // //TODO i18n
+                    Trigger = args.Trigger,
+                    IsStartNowPipeline = args.IsStartNowPipeline,
+                });
+
+
+                
+                //        var cancellationRequestData = _cancellationRequestData.GetCancellationRequestData();
+
+                //        routineOpsRepository.AddRoutineOperationAction(
+                //            new RoutineOperationAction()
+                //            {
+                //                RoutineOperationId = args.Item.RoutineOperationId,
+                //                RoutineOperationItemId = args.Item.Id,
+                //                Period = DateTime.Now,
+                //                TypeOperationAction = TypeOperationAction.Canceled,
+                //                LaunchId = args.LaunchId,
+                //                Message = $"Операция отменена. Ид запроса на отмену: {cancellationRequestData.CancellationRequestId}: " +
+                //                    $"{cancellationRequestData.Description}",
+                //                TriggerName = args.TriggerName,
+                //            });
+            }
+        }
+
+        private class CancelOperationArgs
+        {
+            public string LaunchId { get; set; } = string.Empty;
+            public string PipelineName { get; set; } = string.Empty;
+            public string ItemDescription { get; set; } = string.Empty;
+            public int ItemSortOrder { get; set; }
+            public long ItemId { get; set; }
+            public string TypeOperationId { get; set; } = string.Empty;
+            public string Trigger { get; set; } = string.Empty;
+            public bool IsStartNowPipeline { get; set; }
+        }
     }
 }

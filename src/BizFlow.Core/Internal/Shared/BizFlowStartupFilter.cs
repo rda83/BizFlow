@@ -12,6 +12,7 @@ namespace BizFlow.Core.Internal.Shared
             return app =>
             {
                 next(app);
+
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
                     var bizFlowJobManager = scope.ServiceProvider.GetRequiredService<BizFlowJobManager>();
