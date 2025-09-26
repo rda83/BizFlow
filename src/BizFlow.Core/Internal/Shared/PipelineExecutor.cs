@@ -3,7 +3,6 @@ using BizFlow.Core.Contracts;
 using BizFlow.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
-using Quartz.Impl.AdoJobStore.Common;
 
 namespace BizFlow.Core.Internal.Shared
 {
@@ -36,6 +35,8 @@ namespace BizFlow.Core.Internal.Shared
 
         private const int DELAY_UPDATE_CANCELLATION_TOKEN = 5000;
 
+        private CancellationRequestData _cancellationRequestData;
+
         public PipelineExecutor(IPipelineService pipelineService, IServiceScopeFactory scopeFactory,
             IBizFlowJournal journal, ICancelPipelineRequestService cancelPipelineRequestService)
         {
@@ -43,11 +44,15 @@ namespace BizFlow.Core.Internal.Shared
             _scopeFactory = scopeFactory;
             _journal = journal;
             _cancelPipelineRequestService = cancelPipelineRequestService;
+
+            _cancellationRequestData = new CancellationRequestData();
         }
 
         public async Task Execute(IJobExecutionContext context)
         {
-            //IJobExecutionContext/CancellationToken
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+
+
             string launchId = string.Empty;
             string pipelineName = string.Empty;
             bool isStartNowPipeline = false;
@@ -111,24 +116,22 @@ namespace BizFlow.Core.Internal.Shared
                     return;
                 }
 
-                var cancellationRequest = _cancelPipelineRequestService.GetActiveRequest(pipelineName);
+                var cancellationRequest = await _cancelPipelineRequestService.GetActiveRequest(pipelineName);
 
                 if (cancellationRequest == null)
                 {
-                    //Task.Run(() => UpdateCancellationTokenSource(new UpdateCancellationTokenSourceArgs()
-                    //{
-                    //    Cts = cts,
-                    //    CronExpression = tc.CronExpression,
-                    //    OperationName = tc.OperationName,
-                    //}));
+                    Task.Run(() => UpdateCancellationTokenSource(linkedCts, pipelineName));
 
-                    await ExecuteItems(pipeline, launchId, isStartNowPipeline, context);
+                    await ExecuteItems(pipeline, launchId, isStartNowPipeline, linkedCts.Token);
                 }
                 else
                 {
+                    _cancellationRequestData.SetCancellationRequestData(cancellationRequest.ClosingByExpirationTimeOnly,
+                            cancellationRequest.Description, cancellationRequest.Id);
+
                     foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
                     {
-                        var CancelOperationArgs = new CancelOperationArgs()
+                        var cancelOperationArgs = new CancelOperationArgs()
                         {
                             LaunchId = launchId,
                             PipelineName = pipelineName,
@@ -139,38 +142,28 @@ namespace BizFlow.Core.Internal.Shared
                             Trigger = pipeline.CronExpression,
                             IsStartNowPipeline = isStartNowPipeline,
                         };
-
-
+                        await CancelOperation(cancelOperationArgs);
                     }
-
-
-
-                    //_cancellationRequestData.SetCancellationRequestData(
-                    //    (cancellationRequest.ClosingByExpirationTimeOnly,
-                    //    cancellationRequest.Description, cancellationRequest.Id));
-
-                    //foreach (var item in operationItems)
-                    //{
-                    //    CancelOperation(new CancelOperationArgs()
-                    //    {
-                    //        Item = item,
-                    //        TriggerName = tc.TriggerName,
-                    //        LaunchId = tc.LaunchId,
-                    //    });
-                    //}
-                    //CancellationRequestSetExecuted();
+                    await CancellationRequestSetExecuted();
                 }                   
             }
             catch (Exception)
             {                
                 throw;
             }
+            finally
+            {
+                linkedCts.Cancel();
+            }
         }
 
-        private async Task ExecuteItems(Pipeline pipeline, string launchId, bool isStartNowPipeline, IJobExecutionContext context)
+        private async Task ExecuteItems(Pipeline pipeline, string launchId, bool isStartNowPipeline, 
+            CancellationToken cancellationToken = default)
         {
             foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 await _journal.AddRecordAsync(new BizFlowJournalRecord()
                 {
                     Period = DateTime.Now,
@@ -216,7 +209,7 @@ namespace BizFlow.Core.Internal.Shared
                         workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
                         workerContext.PipelineName = pipeline.Name;
                         workerContext.CronExpression = pipeline.CronExpression;
-                        workerContext.CancellationToken = context.CancellationToken;
+                        workerContext.CancellationToken = cancellationToken;
                         workerContext.Options = pipelineItem.Options;
                         workerContext.IsStartNowPipeline = isStartNowPipeline;
 
@@ -274,21 +267,22 @@ namespace BizFlow.Core.Internal.Shared
 
                     if (cancellationRequest != null)
                     {
-                        cancelPipelineRequestService.SetExecutedAsync(cancellationRequest.Id);
+                        cancelPipelineRequestService.SetExecutedAsync(cancellationRequest.Id)
+                            .GetAwaiter().GetResult();
                         cts.Cancel();
                     }
                 }
             }
         }
 
-        //CancelOperationArgs args  IBizFlowJournal _journal
         private async Task CancelOperation(CancelOperationArgs args)
         {
             using (var scope = _scopeFactory.CreateScope())
             {
-
                 var journal = scope.ServiceProvider.GetRequiredService<IBizFlowJournal>();
-                
+
+                var cancellationRequestData = _cancellationRequestData.GetCancellationRequestData();
+
                 await journal.AddRecordAsync(new BizFlowJournalRecord()
                 {
                     Period = DateTime.Now,
@@ -299,27 +293,27 @@ namespace BizFlow.Core.Internal.Shared
                     TypeAction = TypeBizFlowJournalAction.Canceled,
                     TypeOperationId = args.TypeOperationId,
                     LaunchId = args.LaunchId,
-                    Message = $"Не найден элемент для исполнения: {pipelineName}", // //TODO i18n
+                    Message = $"Операция отменена. Ид запроса на отмену: {cancellationRequestData.CancellationRequestId}", //TODO i18n
                     Trigger = args.Trigger,
                     IsStartNowPipeline = args.IsStartNowPipeline,
                 });
+            }
+        }
 
+        private async Task CancellationRequestSetExecuted()
+        {
+            var cancellationRequestData = _cancellationRequestData.GetCancellationRequestData();
 
-                
-                //        var cancellationRequestData = _cancellationRequestData.GetCancellationRequestData();
+            if (cancellationRequestData.CancellationRequestId > 0
+                && !cancellationRequestData.ClosingByExpirationTimeOnly)
+            {
+                using (var scope = _scopeFactory.CreateScope())
+                {
+                    var _cancelPipelineRequestService = scope.ServiceProvider
+                        .GetRequiredService<ICancelPipelineRequestService>();
 
-                //        routineOpsRepository.AddRoutineOperationAction(
-                //            new RoutineOperationAction()
-                //            {
-                //                RoutineOperationId = args.Item.RoutineOperationId,
-                //                RoutineOperationItemId = args.Item.Id,
-                //                Period = DateTime.Now,
-                //                TypeOperationAction = TypeOperationAction.Canceled,
-                //                LaunchId = args.LaunchId,
-                //                Message = $"Операция отменена. Ид запроса на отмену: {cancellationRequestData.CancellationRequestId}: " +
-                //                    $"{cancellationRequestData.Description}",
-                //                TriggerName = args.TriggerName,
-                //            });
+                    await _cancelPipelineRequestService.SetExecutedAsync(cancellationRequestData.CancellationRequestId);
+                }
             }
         }
 
@@ -333,6 +327,39 @@ namespace BizFlow.Core.Internal.Shared
             public string TypeOperationId { get; set; } = string.Empty;
             public string Trigger { get; set; } = string.Empty;
             public bool IsStartNowPipeline { get; set; }
+        }
+
+        private class CancellationRequestData
+        {
+            private bool _closingByExpirationTimeOnly;
+            private string? _description = string.Empty;
+            private long _cancellationRequestId;
+
+            private object lockObject = new object();
+
+            public void SetCancellationRequestData(bool closingByExpirationTimeOnly, string? description, long cancellationRequestId)
+            {
+                lock (lockObject)
+                {
+                    _closingByExpirationTimeOnly = closingByExpirationTimeOnly;
+                    _description = description;
+                    _cancellationRequestId = cancellationRequestId;
+
+                }
+            }
+
+            public (bool ClosingByExpirationTimeOnly, string? Description, long CancellationRequestId) GetCancellationRequestData()
+            {
+                (bool ClosingByExpirationTimeOnly, string? Description, long CancellationRequestId) result;
+
+                lock (lockObject)
+                {
+                    result.ClosingByExpirationTimeOnly = _closingByExpirationTimeOnly;
+                    result.Description = _description;
+                    result.CancellationRequestId = _cancellationRequestId;
+                }
+                return result;
+            }
         }
     }
 }
