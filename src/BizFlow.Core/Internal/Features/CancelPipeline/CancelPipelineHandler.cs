@@ -21,7 +21,7 @@ namespace BizFlow.Core.Internal.Features.CancelPipeline
             var result = new BizFlowChangingResult() { Success = true };
 
             var pipelineNameExist = await _pipelineService.PipelineNameExist(command.PipelineName, cancellationToken);
-            if (pipelineNameExist)
+            if (!pipelineNameExist)
             {
                 result.Success = false;
                 result.Message = $"Пайплайна с именем: {command.PipelineName} не существует."; // TODO:i18n

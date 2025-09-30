@@ -162,24 +162,7 @@ namespace BizFlow.Core.Internal.Shared
         {
             foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                {
-                    Period = DateTime.Now,
-                    PipelineName = pipeline.Name,
-                    ItemDescription = pipelineItem.Description,
-                    ItemSortOrder = pipelineItem.SortOrder,
-                    ItemId = pipelineItem.Id,
-                    TypeAction = TypeBizFlowJournalAction.Start,
-                    TypeOperationId = pipelineItem.TypeOperationId,
-                    LaunchId = launchId,
-                    Message = string.Empty,
-                    Trigger = pipeline.CronExpression,
-                    IsStartNowPipeline = isStartNowPipeline,
-                });
-
-                if (pipelineItem.Blocked)
+                if (!cancellationToken.IsCancellationRequested)
                 {
                     await _journal.AddRecordAsync(new BizFlowJournalRecord()
                     {
@@ -188,68 +171,102 @@ namespace BizFlow.Core.Internal.Shared
                         ItemDescription = pipelineItem.Description,
                         ItemSortOrder = pipelineItem.SortOrder,
                         ItemId = pipelineItem.Id,
-                        TypeAction = TypeBizFlowJournalAction.BlockedPipelineItem,
+                        TypeAction = TypeBizFlowJournalAction.Start,
                         TypeOperationId = pipelineItem.TypeOperationId,
                         LaunchId = launchId,
                         Message = string.Empty,
                         Trigger = pipeline.CronExpression,
+                        IsStartNowPipeline = isStartNowPipeline,
                     });
-                    continue;
-                }
 
-                try
-                {
-                    using (var scope = _scopeFactory.CreateScope())
+                    if (pipelineItem.Blocked)
                     {
-                        IBizFlowWorker worker = scope.ServiceProvider
-                            .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
-
-                        var workerContext = new WorkerContext();
-                        workerContext.LaunchId = launchId;
-                        workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
-                        workerContext.PipelineName = pipeline.Name;
-                        workerContext.CronExpression = pipeline.CronExpression;
-                        workerContext.CancellationToken = cancellationToken;
-                        workerContext.Options = pipelineItem.Options;
-                        workerContext.IsStartNowPipeline = isStartNowPipeline;
-
-                        await worker.Run(workerContext);
+                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                        {
+                            Period = DateTime.Now,
+                            PipelineName = pipeline.Name,
+                            ItemDescription = pipelineItem.Description,
+                            ItemSortOrder = pipelineItem.SortOrder,
+                            ItemId = pipelineItem.Id,
+                            TypeAction = TypeBizFlowJournalAction.BlockedPipelineItem,
+                            TypeOperationId = pipelineItem.TypeOperationId,
+                            LaunchId = launchId,
+                            Message = string.Empty,
+                            Trigger = pipeline.CronExpression,
+                        });
+                        continue;
                     }
 
-                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                    try
                     {
-                        Period = DateTime.Now,
-                        PipelineName = pipeline.Name,
-                        ItemDescription = pipelineItem.Description,
-                        ItemSortOrder = pipelineItem.SortOrder,
-                        ItemId = pipelineItem.Id,
-                        TypeAction = TypeBizFlowJournalAction.Success,
-                        TypeOperationId = pipelineItem.TypeOperationId,
-                        LaunchId = launchId,
-                        Message = string.Empty,
-                        Trigger = pipeline.CronExpression,
-                        IsStartNowPipeline = isStartNowPipeline,
-                    });
-                }
-                catch (Exception)
-                {
-                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                    {
-                        Period = DateTime.Now,
-                        PipelineName = pipeline.Name,
-                        ItemDescription = pipelineItem.Description,
-                        ItemSortOrder = pipelineItem.SortOrder,
-                        ItemId = pipelineItem.Id,
-                        TypeAction = TypeBizFlowJournalAction.Error,
-                        TypeOperationId = pipelineItem.TypeOperationId,
-                        LaunchId = launchId,
-                        Message = string.Empty,
-                        Trigger = pipeline.CronExpression,
-                        IsStartNowPipeline = isStartNowPipeline,
-                    });
+                        using (var scope = _scopeFactory.CreateScope())
+                        {
+                            IBizFlowWorker worker = scope.ServiceProvider
+                                .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
 
-                    throw;
+                            var workerContext = new WorkerContext();
+                            workerContext.LaunchId = launchId;
+                            workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
+                            workerContext.PipelineName = pipeline.Name;
+                            workerContext.CronExpression = pipeline.CronExpression;
+                            workerContext.CancellationToken = cancellationToken;
+                            workerContext.Options = pipelineItem.Options;
+                            workerContext.IsStartNowPipeline = isStartNowPipeline;
+
+                            await worker.Run(workerContext);
+                        }
+
+                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                        {
+                            Period = DateTime.Now,
+                            PipelineName = pipeline.Name,
+                            ItemDescription = pipelineItem.Description,
+                            ItemSortOrder = pipelineItem.SortOrder,
+                            ItemId = pipelineItem.Id,
+                            TypeAction = TypeBizFlowJournalAction.Success,
+                            TypeOperationId = pipelineItem.TypeOperationId,
+                            LaunchId = launchId,
+                            Message = string.Empty,
+                            Trigger = pipeline.CronExpression,
+                            IsStartNowPipeline = isStartNowPipeline,
+                        });
+                    }
+                    catch (Exception)
+                    {
+                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
+                        {
+                            Period = DateTime.Now,
+                            PipelineName = pipeline.Name,
+                            ItemDescription = pipelineItem.Description,
+                            ItemSortOrder = pipelineItem.SortOrder,
+                            ItemId = pipelineItem.Id,
+                            TypeAction = TypeBizFlowJournalAction.Error,
+                            TypeOperationId = pipelineItem.TypeOperationId,
+                            LaunchId = launchId,
+                            Message = string.Empty,
+                            Trigger = pipeline.CronExpression,
+                            IsStartNowPipeline = isStartNowPipeline,
+                        });
+
+                        throw;
+                    }
                 }
+                else
+                {
+                    var cancelOperationArgs = new CancelOperationArgs()
+                    {
+                        LaunchId = launchId,
+                        PipelineName = pipeline.Name,
+                        ItemDescription = pipelineItem.Description,
+                        ItemId = pipelineItem.Id,
+                        ItemSortOrder = pipelineItem.SortOrder,
+                        TypeOperationId = pipelineItem.TypeOperationId,
+                        Trigger = pipeline.CronExpression,
+                        IsStartNowPipeline = isStartNowPipeline,
+                    };
+                    await CancelOperation(cancelOperationArgs);
+                    await CancellationRequestSetExecuted();
+                }           
             }
         }
 
@@ -258,12 +275,11 @@ namespace BizFlow.Core.Internal.Shared
             using (var scope = _scopeFactory.CreateScope())
             {
                 var cancelPipelineRequestService = scope.ServiceProvider.GetRequiredService<ICancelPipelineRequestService>();
-
                 while (!cts.IsCancellationRequested)
                 {
                     Thread.Sleep(DELAY_UPDATE_CANCELLATION_TOKEN);
-
-                    var cancellationRequest = cancelPipelineRequestService.GetActiveRequest(pipelineName);
+                    var cancellationRequest = cancelPipelineRequestService.GetActiveRequest(pipelineName)
+                        .GetAwaiter().GetResult();
 
                     if (cancellationRequest != null)
                     {
