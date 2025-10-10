@@ -28,69 +28,27 @@ namespace BizFlow.Core.Internal.Shared
             _cancellationRequestData = new CancellationRequestData();
         }
 
+
         public async Task Execute(IJobExecutionContext context)
         {
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
 
-
-            string launchId = string.Empty;
-            string pipelineName = string.Empty;
-            bool isStartNowPipeline = false;
-
-            if (context.Trigger is Quartz.Impl.Triggers.CronTriggerImpl)
-            {
-                launchId = Guid.NewGuid().ToString();
-                pipelineName = ((Quartz.Impl.Triggers.AbstractTrigger)context.Trigger).Name;
-            }
-            else if (context.Trigger is Quartz.Impl.Triggers.SimpleTriggerImpl)
-            {
-                var trigger = (Quartz.Impl.Triggers.SimpleTriggerImpl)context.Trigger;
-                launchId = trigger.JobDataMap.GetString("launchId");
-                pipelineName = trigger.JobDataMap.GetString("pipelineName");
-                isStartNowPipeline = true;
-            }
-            else
-            {
-                throw new ArgumentException($"Unknown trigger type. [{context.Trigger.GetType()}]");
-            }
+            var triggerInfo = ExtractTriggerInfo(context);
+            var launchId = triggerInfo.LaunchId;
+            var pipelineName = triggerInfo.PipelineName;
+            var isStartNowPipeline = triggerInfo.IsStartNowPipeline;
 
             var pipeline = await _pipelineService.GetPipelineAsync(pipelineName);
                 
             if (pipeline == null)
             {
-                await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                {
-                    Period = DateTime.Now,
-                    PipelineName = string.Empty,
-                    ItemDescription = string.Empty,
-                    ItemSortOrder = 0,
-                    ItemId = 0,
-                    TypeAction = TypeBizFlowJournalAction.Error,
-                    TypeOperationId = string.Empty,
-                    LaunchId = launchId,
-                    Message = $"Не найден элемент для исполнения: {pipelineName}", //TODO i18n
-                    Trigger = string.Empty,
-                    IsStartNowPipeline = isStartNowPipeline,
-                });
+                await AddError(launchId, isStartNowPipeline, $"Не найден элемент для исполнения: {pipelineName}");//TODO i18n
                 return;
             }
                               
             if (pipeline!.Blocked)
             {
-                await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                {
-                    Period = DateTime.Now,
-                    PipelineName = pipeline.Name,
-                    ItemDescription = string.Empty,
-                    ItemSortOrder = 0,
-                    ItemId = 0,
-                    TypeAction = TypeBizFlowJournalAction.BlockedPipeline,
-                    TypeOperationId = string.Empty,
-                    LaunchId = launchId,
-                    Message = string.Empty,
-                    Trigger = string.Empty,
-                    IsStartNowPipeline = isStartNowPipeline,
-                });
+                await AddBlockedPipeline(launchId, isStartNowPipeline, pipeline.Name);
                 return;
             }
 
@@ -132,6 +90,34 @@ namespace BizFlow.Core.Internal.Shared
             }
         }
 
+        private (string LaunchId, string PipelineName, bool IsStartNowPipeline) ExtractTriggerInfo(IJobExecutionContext context)
+        {
+            var launchId = string.Empty;
+            var pipelineName = string.Empty;
+            var isStartNowPipeline = false;
+
+
+            if (context.Trigger is Quartz.Impl.Triggers.CronTriggerImpl)
+            {
+                launchId = Guid.NewGuid().ToString();
+                pipelineName = ((Quartz.Impl.Triggers.AbstractTrigger)context.Trigger).Name;
+            }
+            else if (context.Trigger is Quartz.Impl.Triggers.SimpleTriggerImpl)
+            {
+                var trigger = (Quartz.Impl.Triggers.SimpleTriggerImpl)context.Trigger;
+                launchId = trigger.JobDataMap.GetString("launchId");
+                pipelineName = trigger.JobDataMap.GetString("pipelineName");
+                isStartNowPipeline = true;
+            }
+            else
+            {
+                throw new ArgumentException($"Unknown trigger type. [{context.Trigger.GetType()}]");
+            }
+
+            return (launchId, pipelineName, isStartNowPipeline);
+
+        }
+
         private async Task ExecuteItems(Pipeline pipeline, string launchId, bool isStartNowPipeline, 
             CancellationToken cancellationToken = default)
         {
@@ -139,36 +125,11 @@ namespace BizFlow.Core.Internal.Shared
             {
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                    {
-                        Period = DateTime.Now,
-                        PipelineName = pipeline.Name,
-                        ItemDescription = pipelineItem.Description,
-                        ItemSortOrder = pipelineItem.SortOrder,
-                        ItemId = pipelineItem.Id,
-                        TypeAction = TypeBizFlowJournalAction.Start,
-                        TypeOperationId = pipelineItem.TypeOperationId,
-                        LaunchId = launchId,
-                        Message = string.Empty,
-                        Trigger = pipeline.CronExpression,
-                        IsStartNowPipeline = isStartNowPipeline,
-                    });
+                    await AddStart(launchId, isStartNowPipeline, pipeline, pipelineItem)
 
                     if (pipelineItem.Blocked)
                     {
-                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                        {
-                            Period = DateTime.Now,
-                            PipelineName = pipeline.Name,
-                            ItemDescription = pipelineItem.Description,
-                            ItemSortOrder = pipelineItem.SortOrder,
-                            ItemId = pipelineItem.Id,
-                            TypeAction = TypeBizFlowJournalAction.BlockedPipelineItem,
-                            TypeOperationId = pipelineItem.TypeOperationId,
-                            LaunchId = launchId,
-                            Message = string.Empty,
-                            Trigger = pipeline.CronExpression,
-                        });
+                        await AddBlockedPipelineItem(launchId, pipeline, pipelineItem);
                         continue;
                     }
 
@@ -190,39 +151,11 @@ namespace BizFlow.Core.Internal.Shared
 
                             await worker.Run(workerContext);
                         }
-
-                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                        {
-                            Period = DateTime.Now,
-                            PipelineName = pipeline.Name,
-                            ItemDescription = pipelineItem.Description,
-                            ItemSortOrder = pipelineItem.SortOrder,
-                            ItemId = pipelineItem.Id,
-                            TypeAction = TypeBizFlowJournalAction.Success,
-                            TypeOperationId = pipelineItem.TypeOperationId,
-                            LaunchId = launchId,
-                            Message = string.Empty,
-                            Trigger = pipeline.CronExpression,
-                            IsStartNowPipeline = isStartNowPipeline,
-                        });
+                        await AddSuccess(launchId, isStartNowPipeline, pipeline, pipelineItem);
                     }
                     catch (Exception)
                     {
-                        await _journal.AddRecordAsync(new BizFlowJournalRecord()
-                        {
-                            Period = DateTime.Now,
-                            PipelineName = pipeline.Name,
-                            ItemDescription = pipelineItem.Description,
-                            ItemSortOrder = pipelineItem.SortOrder,
-                            ItemId = pipelineItem.Id,
-                            TypeAction = TypeBizFlowJournalAction.Error,
-                            TypeOperationId = pipelineItem.TypeOperationId,
-                            LaunchId = launchId,
-                            Message = string.Empty,
-                            Trigger = pipeline.CronExpression,
-                            IsStartNowPipeline = isStartNowPipeline,
-                        });
-
+                        await AddError(launchId, isStartNowPipeline, pipeline, pipelineItem);
                         throw;
                     }
                 }
@@ -272,20 +205,7 @@ namespace BizFlow.Core.Internal.Shared
 
                 var cancellationRequestData = _cancellationRequestData.GetCancellationRequestData();
 
-                await journal.AddRecordAsync(new BizFlowJournalRecord()
-                {
-                    Period = DateTime.Now,
-                    PipelineName = args.PipelineName,
-                    ItemDescription = args.ItemDescription,
-                    ItemSortOrder = args.ItemSortOrder,
-                    ItemId = args.ItemId,
-                    TypeAction = TypeBizFlowJournalAction.Canceled,
-                    TypeOperationId = args.TypeOperationId,
-                    LaunchId = args.LaunchId,
-                    Message = $"Операция отменена. Ид запроса на отмену: {cancellationRequestData.CancellationRequestId}", //TODO i18n
-                    Trigger = args.Trigger,
-                    IsStartNowPipeline = args.IsStartNowPipeline,
-                });
+                await AddCanceled(journal, args, cancellationRequestData.CancellationRequestId);
             }
         }
 
@@ -350,5 +270,135 @@ namespace BizFlow.Core.Internal.Shared
                 return result;
             }
         }
+
+        #region JournalAddRecord
+
+        private async Task AddError(string launchId, bool isStartNowPipeline, string msg)
+        {
+            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            {
+                Period = DateTime.Now,
+                PipelineName = string.Empty,
+                ItemDescription = string.Empty,
+                ItemSortOrder = 0,
+                ItemId = 0,
+                TypeAction = TypeBizFlowJournalAction.Error,
+                TypeOperationId = string.Empty,
+                LaunchId = launchId,
+                Message = msg,
+                Trigger = string.Empty,
+                IsStartNowPipeline = isStartNowPipeline,
+            });
+        }
+
+        private async Task AddBlockedPipeline(string launchId, bool isStartNowPipeline, string pipelineName)
+        {
+            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            {
+                Period = DateTime.Now,
+                PipelineName = pipelineName,
+                ItemDescription = string.Empty,
+                ItemSortOrder = 0,
+                ItemId = 0,
+                TypeAction = TypeBizFlowJournalAction.BlockedPipeline,
+                TypeOperationId = string.Empty,
+                LaunchId = launchId,
+                Message = string.Empty,
+                Trigger = string.Empty,
+                IsStartNowPipeline = isStartNowPipeline,
+            });
+        }
+
+        private async Task AddStart(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
+        {
+            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            {
+                Period = DateTime.Now,
+                PipelineName = pipeline.Name,
+                ItemDescription = pipelineItem.Description,
+                ItemSortOrder = pipelineItem.SortOrder,
+                ItemId = pipelineItem.Id,
+                TypeAction = TypeBizFlowJournalAction.Start,
+                TypeOperationId = pipelineItem.TypeOperationId,
+                LaunchId = launchId,
+                Message = string.Empty,
+                Trigger = pipeline.CronExpression,
+                IsStartNowPipeline = isStartNowPipeline,
+            });
+        }
+
+        private async Task AddBlockedPipelineItem(string launchId, Pipeline pipeline, PipelineItem pipelineItem)
+        {
+            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            {
+                Period = DateTime.Now,
+                PipelineName = pipeline.Name,
+                ItemDescription = pipelineItem.Description,
+                ItemSortOrder = pipelineItem.SortOrder,
+                ItemId = pipelineItem.Id,
+                TypeAction = TypeBizFlowJournalAction.BlockedPipelineItem,
+                TypeOperationId = pipelineItem.TypeOperationId,
+                LaunchId = launchId,
+                Message = string.Empty,
+                Trigger = pipeline.CronExpression,
+            });
+        }
+
+        private async Task AddSuccess(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
+        {
+            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            {
+                Period = DateTime.Now,
+                PipelineName = pipeline.Name,
+                ItemDescription = pipelineItem.Description,
+                ItemSortOrder = pipelineItem.SortOrder,
+                ItemId = pipelineItem.Id,
+                TypeAction = TypeBizFlowJournalAction.Success,
+                TypeOperationId = pipelineItem.TypeOperationId,
+                LaunchId = launchId,
+                Message = string.Empty,
+                Trigger = pipeline.CronExpression,
+                IsStartNowPipeline = isStartNowPipeline,
+            });
+        }
+
+        private async Task AddError(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
+        {
+            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            {
+                Period = DateTime.Now,
+                PipelineName = pipeline.Name,
+                ItemDescription = pipelineItem.Description,
+                ItemSortOrder = pipelineItem.SortOrder,
+                ItemId = pipelineItem.Id,
+                TypeAction = TypeBizFlowJournalAction.Error,
+                TypeOperationId = pipelineItem.TypeOperationId,
+                LaunchId = launchId,
+                Message = string.Empty,
+                Trigger = pipeline.CronExpression,
+                IsStartNowPipeline = isStartNowPipeline,
+            });
+        }
+
+        private async Task AddCanceled(IBizFlowJournal journal, CancelOperationArgs args, long cancellationRequestId)
+        {
+            await journal.AddRecordAsync(new BizFlowJournalRecord()
+            {
+                Period = DateTime.Now,
+                PipelineName = args.PipelineName,
+                ItemDescription = args.ItemDescription,
+                ItemSortOrder = args.ItemSortOrder,
+                ItemId = args.ItemId,
+                TypeAction = TypeBizFlowJournalAction.Canceled,
+                TypeOperationId = args.TypeOperationId,
+                LaunchId = args.LaunchId,
+                Message = $"Операция отменена. Ид запроса на отмену: {cancellationRequestId}", //TODO i18n
+                Trigger = args.Trigger,
+                IsStartNowPipeline = args.IsStartNowPipeline,
+            });
+        }
+
+        #endregion
+
     }
 }
