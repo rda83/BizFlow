@@ -15,8 +15,6 @@ namespace BizFlow.Core.Internal.Shared
 
         private const int DELAY_UPDATE_CANCELLATION_TOKEN = 5000;
 
-        private CancellationRequestData _cancellationRequestData;
-
         public PipelineExecutor(IPipelineService pipelineService, IServiceScopeFactory scopeFactory,
             IBizFlowJournal journal, ICancelPipelineRequestService cancelPipelineRequestService)
         {
@@ -24,8 +22,6 @@ namespace BizFlow.Core.Internal.Shared
             _scopeFactory = scopeFactory;
             _journal = journal;
             _cancelPipelineRequestService = cancelPipelineRequestService;
-
-            _cancellationRequestData = new CancellationRequestData();
         }
 
 
@@ -56,9 +52,6 @@ namespace BizFlow.Core.Internal.Shared
 
             if (cancellationRequest != null)
             {
-                _cancellationRequestData.SetCancellationRequestData(cancellationRequest.ClosingByExpirationTimeOnly,
-                    cancellationRequest.Description, cancellationRequest.Id);
-
                 foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
                 {
                     var cancelOperationArgs = new CancelOperationArgs()
@@ -71,17 +64,24 @@ namespace BizFlow.Core.Internal.Shared
                         TypeOperationId = pipelineItem.TypeOperationId,
                         Trigger = pipeline.CronExpression,
                         IsStartNowPipeline = isStartNowPipeline,
+                        CancellationRequestId = cancellationRequest.Id,
                     };
                     await CancelOperation(cancelOperationArgs);
                 }
-                await CancellationRequestSetExecuted();
+                await CancellationRequestSetExecuted(new CancellationRequestSetExecutedArgs()
+                {
+                    CancellationRequestId = cancellationRequest.Id,
+                    ClosingByExpirationTimeOnly = cancellationRequest.ClosingByExpirationTimeOnly,
+                    Description = cancellationRequest.Description,
+                });
                 return ;
             }
 
-            var cancellationMonitoringTask = UpdateCancellationTokenSource(linkedCts, pipelineName);
+            var _cancellationRequestData = new CancellationRequestData();
+            var cancellationMonitoringTask = UpdateCancellationTokenSource(linkedCts, pipelineName, _cancellationRequestData);
             try
             {
-                await ExecuteItems(pipeline, launchId, isStartNowPipeline, linkedCts.Token);   
+                await ExecuteItems(_cancellationRequestData, pipeline, launchId, isStartNowPipeline, linkedCts.Token);   
             }
             finally
             {
@@ -118,14 +118,14 @@ namespace BizFlow.Core.Internal.Shared
 
         }
 
-        private async Task ExecuteItems(Pipeline pipeline, string launchId, bool isStartNowPipeline, 
+        private async Task ExecuteItems(CancellationRequestData cancellationRequestData, Pipeline pipeline, string launchId, bool isStartNowPipeline, 
             CancellationToken cancellationToken = default)
         {
             foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
             {
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    await AddStart(launchId, isStartNowPipeline, pipeline, pipelineItem)
+                    await AddStart(launchId, isStartNowPipeline, pipeline, pipelineItem);
 
                     if (pipelineItem.Blocked)
                     {
@@ -161,6 +161,7 @@ namespace BizFlow.Core.Internal.Shared
                 }
                 else
                 {
+                    var cancellationRequest = cancellationRequestData.GetCancellationRequestData();
                     var cancelOperationArgs = new CancelOperationArgs()
                     {
                         LaunchId = launchId,
@@ -171,18 +172,27 @@ namespace BizFlow.Core.Internal.Shared
                         TypeOperationId = pipelineItem.TypeOperationId,
                         Trigger = pipeline.CronExpression,
                         IsStartNowPipeline = isStartNowPipeline,
+                        CancellationRequestId = cancellationRequest.CancellationRequestId,
                     };
                     await CancelOperation(cancelOperationArgs);
-                    await CancellationRequestSetExecuted();
+                    await CancellationRequestSetExecuted(new CancellationRequestSetExecutedArgs()
+                    {
+                        CancellationRequestId = cancellationRequest.CancellationRequestId,
+                        ClosingByExpirationTimeOnly = cancellationRequest.ClosingByExpirationTimeOnly,
+                        Description = cancellationRequest.Description,
+                    });
                 }           
             }
         }
 
-        private async Task UpdateCancellationTokenSource(CancellationTokenSource cts, string pipelineName)
+        private async Task UpdateCancellationTokenSource(CancellationTokenSource cts, string pipelineName, CancellationRequestData cancellationRequestData)
         {
             using (var scope = _scopeFactory.CreateScope())
             {
                 var cancelPipelineRequestService = scope.ServiceProvider.GetRequiredService<ICancelPipelineRequestService>();
+
+                // Проверить: цикл может работать вечно, если не будет запроса на отмену.
+                // после выполнения всех элементов токен отменяется.
                 while (!cts.IsCancellationRequested)
                 {
                     await Task.Delay(DELAY_UPDATE_CANCELLATION_TOKEN);
@@ -190,7 +200,11 @@ namespace BizFlow.Core.Internal.Shared
 
                     if (cancellationRequest != null)
                     {
-                        await cancelPipelineRequestService.SetExecutedAsync(cancellationRequest.Id);
+                        cancellationRequestData.SetCancellationRequestData(
+                            cancellationRequest.ClosingByExpirationTimeOnly, 
+                            cancellationRequest.Description, 
+                            cancellationRequest.Id);
+
                         cts.Cancel();
                     }
                 }
@@ -202,28 +216,30 @@ namespace BizFlow.Core.Internal.Shared
             using (var scope = _scopeFactory.CreateScope())
             {
                 var journal = scope.ServiceProvider.GetRequiredService<IBizFlowJournal>();
-
-                var cancellationRequestData = _cancellationRequestData.GetCancellationRequestData();
-
-                await AddCanceled(journal, args, cancellationRequestData.CancellationRequestId);
+                await AddCanceled(journal, args);
             }
         }
 
-        private async Task CancellationRequestSetExecuted()
+        private async Task CancellationRequestSetExecuted(CancellationRequestSetExecutedArgs args)
         {
-            var cancellationRequestData = _cancellationRequestData.GetCancellationRequestData();
-
-            if (cancellationRequestData.CancellationRequestId > 0
-                && !cancellationRequestData.ClosingByExpirationTimeOnly)
+            if (args.CancellationRequestId > 0
+                && !args.ClosingByExpirationTimeOnly)
             {
                 using (var scope = _scopeFactory.CreateScope())
                 {
                     var _cancelPipelineRequestService = scope.ServiceProvider
                         .GetRequiredService<ICancelPipelineRequestService>();
 
-                    await _cancelPipelineRequestService.SetExecutedAsync(cancellationRequestData.CancellationRequestId);
+                    await _cancelPipelineRequestService.SetExecutedAsync(args.CancellationRequestId);
                 }
             }
+        }
+
+        private class CancellationRequestSetExecutedArgs
+        {
+            public bool ClosingByExpirationTimeOnly { get; set; }
+            public string? Description { get; set; } = string.Empty;
+            public long CancellationRequestId { get; set; }
         }
 
         private class CancelOperationArgs
@@ -236,22 +252,23 @@ namespace BizFlow.Core.Internal.Shared
             public string TypeOperationId { get; set; } = string.Empty;
             public string Trigger { get; set; } = string.Empty;
             public bool IsStartNowPipeline { get; set; }
+            public long CancellationRequestId { get; set; }
         }
 
         private class CancellationRequestData
         {
             private bool _closingByExpirationTimeOnly;
-            private string? _description = string.Empty;
+            private string _description = string.Empty;
             private long _cancellationRequestId;
 
-            private object lockObject = new object();
+            private readonly object _lockObject = new();
 
             public void SetCancellationRequestData(bool closingByExpirationTimeOnly, string? description, long cancellationRequestId)
             {
-                lock (lockObject)
+                lock (_lockObject)
                 {
                     _closingByExpirationTimeOnly = closingByExpirationTimeOnly;
-                    _description = description;
+                    _description = description ?? string.Empty;
                     _cancellationRequestId = cancellationRequestId;
 
                 }
@@ -261,7 +278,7 @@ namespace BizFlow.Core.Internal.Shared
             {
                 (bool ClosingByExpirationTimeOnly, string? Description, long CancellationRequestId) result;
 
-                lock (lockObject)
+                lock (_lockObject)
                 {
                     result.ClosingByExpirationTimeOnly = _closingByExpirationTimeOnly;
                     result.Description = _description;
@@ -380,7 +397,7 @@ namespace BizFlow.Core.Internal.Shared
             });
         }
 
-        private async Task AddCanceled(IBizFlowJournal journal, CancelOperationArgs args, long cancellationRequestId)
+        private async Task AddCanceled(IBizFlowJournal journal, CancelOperationArgs args)
         {
             await journal.AddRecordAsync(new BizFlowJournalRecord()
             {
@@ -392,7 +409,7 @@ namespace BizFlow.Core.Internal.Shared
                 TypeAction = TypeBizFlowJournalAction.Canceled,
                 TypeOperationId = args.TypeOperationId,
                 LaunchId = args.LaunchId,
-                Message = $"Операция отменена. Ид запроса на отмену: {cancellationRequestId}", //TODO i18n
+                Message = $"Операция отменена. Ид запроса на отмену: {args.CancellationRequestId}", //TODO i18n
                 Trigger = args.Trigger,
                 IsStartNowPipeline = args.IsStartNowPipeline,
             });
