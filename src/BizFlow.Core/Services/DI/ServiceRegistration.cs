@@ -7,6 +7,7 @@ using BizFlow.Core.Internal.Features.StartNowPipeline;
 using BizFlow.Core.Internal.Features.StatusPipeline;
 using BizFlow.Core.Internal.Jobs;
 using BizFlow.Core.Internal.Shared;
+using BizFlow.Core.Internal.Shared.ExecutionServices;
 using BizFlow.Core.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,6 +68,7 @@ namespace BizFlow.Core.Services.DI
             services.AddMvcCore()
                 .AddApplicationPart(assembly);
             services.AddScoped<BizFlowJobManager>();
+            services.AddScoped<CancellationMonitorService>();
             services.AddScoped<PipelineExecutor>();
             services.AddScoped<IAddPipelineHandler, AddPipelineHandler>();
             services.AddScoped<IDeletePipelineHandler, DeletePipelineHandler>();

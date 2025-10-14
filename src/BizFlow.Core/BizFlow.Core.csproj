@@ -7,15 +7,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Internal\Model\**" />
+    <EmbeddedResource Remove="Internal\Model\**" />
+    <None Remove="Internal\Model\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.3" />
     <PackageReference Include="Quartz" Version="3.14.0" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.14.0" />
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.14.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Internal\Model\" />
   </ItemGroup>
 
 </Project>
