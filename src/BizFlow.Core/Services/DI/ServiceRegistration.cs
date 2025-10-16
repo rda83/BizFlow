@@ -69,6 +69,7 @@ namespace BizFlow.Core.Services.DI
                 .AddApplicationPart(assembly);
             services.AddScoped<BizFlowJobManager>();
             services.AddScoped<CancellationMonitorService>();
+            services.AddScoped<PipelineExecutorJournal>();
             services.AddScoped<PipelineExecutor>();
             services.AddScoped<IAddPipelineHandler, AddPipelineHandler>();
             services.AddScoped<IDeletePipelineHandler, DeletePipelineHandler>();
