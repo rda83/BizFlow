@@ -4,6 +4,17 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	  
+	<PackageId>BizFlow</PackageId>
+	<Version>1.0.1-beta</Version>
+	<Authors>Denis R. (RDA83)</Authors>
+	<Description>Task pipeline management system for .NET</Description>
+
+	<PackageTags>pipeline;task;scheduling;cron;workflow</PackageTags>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+	<RepositoryUrl>https://github.com/rda83/BizFlow</RepositoryUrl>
+	<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  
   </PropertyGroup>
 
   <ItemGroup>
