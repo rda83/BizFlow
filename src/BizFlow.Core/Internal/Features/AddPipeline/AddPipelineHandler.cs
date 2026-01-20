@@ -1,4 +1,5 @@
 ﻿using BizFlow.Core.Contracts;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,13 +11,15 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
         private readonly BizFlowJobManager _bizFlowJobManager;
         private readonly IPipelineService _pipelineService;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IBizFlowStorage _storage;
 
         public AddPipelineHandler(BizFlowJobManager bizFlowJobManager,
-            IPipelineService pipelineService, IServiceScopeFactory scopeFactory)
+            IPipelineService pipelineService, IServiceScopeFactory scopeFactory, IBizFlowStorage storage)
         {
             _bizFlowJobManager = bizFlowJobManager;
             _pipelineService = pipelineService;
             _scopeFactory = scopeFactory;
+            _storage = storage;
         }
 
         public async Task<BizFlowChangingResult> AddPipelineAsync(AddPipelineCommand command,
@@ -81,6 +84,10 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
 
             await _pipelineService.AddPipelineAsync(pipeline, cancellationToken);
             await _bizFlowJobManager.CrerateTrigger(command.Name, command.CronExpression);
+
+
+            _storage.Ping();
+            await _storage.AddPipelineAsync(pipeline);
 
             return result;
         }
