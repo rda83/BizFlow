@@ -9,7 +9,7 @@ namespace BizFlow.Storage.PostgreSQL
         public static void AddPostgreSQLBizFlowStorage(this IServiceCollection services)
         {
 
-            services.AddSingleton(sp => new ConnectionFactory(""));
+            services.AddSingleton(sp => new ConnectionFactory("Host=localhost;Port=5432;Database=mydb;Username=myuser;Password=mysecretpassword"));
 
             services.AddScoped<IBizFlowStorage, PostgreSQLBizFlowStorage>();
         }
