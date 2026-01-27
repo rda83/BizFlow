@@ -3,9 +3,12 @@ using BizFlow.Core.Model;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using System;
 using static Npgsql.Replication.PgOutput.Messages.RelationMessage;
+using static Quartz.Logging.OperationName;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace BizFlow.Storage.PostgreSQL
 {
@@ -36,47 +39,63 @@ namespace BizFlow.Storage.PostgreSQL
 
         public async Task AddPipelineAsync(Pipeline pipeline, CancellationToken ct = default)
         {
-            var (columns, values, parameters) = BuildInsertParameters(pipeline);
+            var (columns, values, parameters) = BuildInsertParametersHeader(pipeline);
 
             var sql = $@"
-                INSERT INTO public.""Pipelines"" ({columns})
+                INSERT INTO public.bf_pipelines ({columns})
                 VALUES ({values})
                 RETURNING *";
 
-
-
-            // Транзакция, два инсерта, логика ретрая в ExecuteWithConnectionAsync, общий Add - метод как в примере
-            // создание таблиц bf_pipelines, bf_pipeline_items
-            
+            // общий Add - метод как в примере,  логика ретрая в ExecuteWithConnectionAsync, 
 
             await ExecuteWithConnectionAsync(async (connection, ct) =>
             {
-                await using var cmd = new NpgsqlCommand(sql, connection);
-                AddInsertParameters(cmd, pipeline);
+                await using var transaction = await connection.BeginTransactionAsync();
+                try
+                {
 
+                    await using var cmd = new NpgsqlCommand(sql, connection, transaction);
+                    AddInsertParametersHeader(cmd, pipeline);
 
-                await using var reader = await cmd.ExecuteReaderAsync(ct);
+                    var id = (long) await cmd.ExecuteScalarAsync();
 
-                var x = await reader.ReadAsync(ct);
+                    foreach (var item in pipeline.PipelineItems)
+                    {
+                        var (columns, values, parameters) = BuildInsertParametersItem(item, id);
 
+                        var sql_items = $@"
+                            INSERT INTO public.bf_pipeline_items ({columns})
+                            VALUES ({values})
+                            RETURNING *";
 
-                var i = 0;
+                        await using var cmd_item = new NpgsqlCommand(sql_items, connection, transaction);
+                        AddInsertParametersItem(cmd_item, item, id);
 
+                        await cmd_item.ExecuteNonQueryAsync();
+                    }
+
+                    await transaction.CommitAsync(ct);
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync(ct);
+                    throw;
+                }
             }, ct);
-
-
-            //throw new NotImplementedException();
         }
 
+
+        #region Headers
+
         private (string columns, string values, IEnumerable<string> paramNames) 
-            BuildInsertParameters(Pipeline pipeline)
+            BuildInsertParametersHeader(Pipeline pipeline)
         {
             var parameters = new Dictionary<string, object>
             {
-                ["\"Name\""] = pipeline.Name,
-                ["\"CronExpression\""] = pipeline.CronExpression,
-                ["\"Description\""] = pipeline.Description,
-                ["\"Blocked\""] = pipeline.Blocked,
+                ["name"] = pipeline.Name,
+                ["cron_expression"] = pipeline.CronExpression,
+                ["description"] = pipeline.Description,
+                ["blocked"] = pipeline.Blocked,
             };
 
             var columns = string.Join(", ", parameters.Keys);
@@ -85,13 +104,52 @@ namespace BizFlow.Storage.PostgreSQL
             return (columns, values, parameters.Keys);
         }
 
-        private void AddInsertParameters(NpgsqlCommand cmd, Pipeline pipeline)
+        private void AddInsertParametersHeader(NpgsqlCommand cmd, Pipeline pipeline)
         {
-            cmd.Parameters.AddWithValue("Name".Replace("\"", "").ToLower(), pipeline.Name + "NEW");
-            cmd.Parameters.AddWithValue("CronExpression".Replace("\"", "").ToLower(), pipeline.CronExpression);
-            cmd.Parameters.AddWithValue("Description".Replace("\"", "").ToLower(), pipeline.Description);
-            cmd.Parameters.AddWithValue("Blocked".Replace("\"", "").ToLower(), pipeline.Blocked);
+            cmd.Parameters.AddWithValue("name", pipeline.Name);
+            cmd.Parameters.AddWithValue("cron_expression", pipeline.CronExpression);
+            cmd.Parameters.AddWithValue("description", pipeline.Description);
+            cmd.Parameters.AddWithValue("blocked", pipeline.Blocked);
         }
+
+        #endregion
+
+
+        #region Items
+
+
+        private (string columns, string values, IEnumerable<string> paramNames)
+            BuildInsertParametersItem(PipelineItem pipelineItem, long pipelineId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                ["pipeline_id"] = pipelineId,
+                ["type_operation_id"] = pipelineItem.TypeOperationId ?? string.Empty,
+                ["sort_order"] = pipelineItem.SortOrder,
+                ["description"] = pipelineItem.Description ?? string.Empty,
+                ["blocked"] = pipelineItem.Blocked,
+                ["options"] = pipelineItem.Options,
+            };
+
+            var columns = string.Join(", ", parameters.Keys);
+            var values = string.Join(", ", parameters.Keys.Select(k => $"@{k.Replace("\"", "").ToLower()}"));
+
+            return (columns, values, parameters.Keys);
+        }
+
+        private void AddInsertParametersItem(NpgsqlCommand cmd, PipelineItem pipelineItem, long pipelineId)
+        {
+            cmd.Parameters.AddWithValue("pipeline_id", pipelineId);
+            cmd.Parameters.AddWithValue("type_operation_id", pipelineItem.TypeOperationId ?? string.Empty);
+            cmd.Parameters.AddWithValue("sort_order", pipelineItem.SortOrder);
+            cmd.Parameters.AddWithValue("description", pipelineItem.Description ?? string.Empty);
+            cmd.Parameters.AddWithValue("blocked", pipelineItem.Blocked);
+            cmd.Parameters.AddWithValue("options", pipelineItem.Options);
+        }
+
+
+
+        #endregion
 
         private async Task ExecuteWithConnectionAsync(
             Func<NpgsqlConnection, CancellationToken, Task> operation,
