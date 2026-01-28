@@ -46,7 +46,7 @@ namespace BizFlow.Storage.PostgreSQL
                 VALUES ({values})
                 RETURNING *";
 
-            // общий Add - метод как в примере,  логика ретрая в ExecuteWithConnectionAsync, 
+            // какая еще есть бизнес логика кроме инсертов в клиентском коде  общий Add - метод как в примере,  логика ретрая в ExecuteWithConnectionAsync, 
 
             await ExecuteWithConnectionAsync(async (connection, ct) =>
             {
