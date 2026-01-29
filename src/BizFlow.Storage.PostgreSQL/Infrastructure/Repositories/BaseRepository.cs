@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Npgsql;
-using static Npgsql.Replication.PgOutput.Messages.RelationMessage;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
@@ -20,7 +19,6 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             _logger = logger ??
                 throw new ArgumentNullException(nameof(logger));
         }
-
 
         public async Task<TEntity> AddAsync(TEntity entity, CancellationToken ct = default)
         {
@@ -42,13 +40,8 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
                 return MapToEntity(reader);
 
             }, ct);
-
-
             return result;
         }
-
-
-
 
         protected async Task<TEntity> ExecuteWithConnectionAsync(
             Func<NpgsqlConnection, CancellationToken, Task<TEntity>> operation,
