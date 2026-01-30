@@ -85,8 +85,6 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
             //await _pipelineService.AddPipelineAsync(pipeline, cancellationToken);
             //await _bizFlowJobManager.CrerateTrigger(command.Name, command.CronExpression);
 
-
-            //_storage.Ping();
             await _storage.AddPipelineAsync(pipeline);
 
             return result;

@@ -1,13 +1,13 @@
 ﻿using BizFlow.Storage.PostgreSQL.Entities;
-using Microsoft.Extensions.Logging;
 using Npgsql;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
-    class PipelineItemRepository : BaseRepository<PipelineItem>
+    class PipelineItemRepository : BaseRepository<PipelineItem>, IRepository<PipelineItem>
     {
-        public PipelineItemRepository(ConnectionFactory connectionFactory, ILogger<BaseRepository<PipelineItem>> logger) : base(connectionFactory, logger)
+        public PipelineItemRepository() : base()
         {
+            Console.WriteLine("[DEBUG] CREATE - PipelineItemRepository");
         }
 
         protected override string TableName => "bf_pipeline_items";

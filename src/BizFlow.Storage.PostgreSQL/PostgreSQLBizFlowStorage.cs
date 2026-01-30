@@ -1,6 +1,7 @@
 ﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
+using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,72 +17,88 @@ namespace BizFlow.Storage.PostgreSQL
     {
         private readonly ConnectionFactory _connectionFactory;
         private readonly ILogger<PostgreSQLBizFlowStorage> _logger;
+        private readonly UnitOfWork _uow;
 
         public PostgreSQLBizFlowStorage(ConnectionFactory connectionFactory,
-            ILogger<PostgreSQLBizFlowStorage> logger)
+            ILogger<PostgreSQLBizFlowStorage> logger,
+            UnitOfWork uow)
         {
             _connectionFactory = connectionFactory ??
                 throw new ArgumentNullException(nameof(connectionFactory));
 
             _logger = logger ??
                 throw new ArgumentNullException(nameof(logger));
+
+            _uow = uow ??
+                throw new ArgumentNullException(nameof(uow));
         }
 
-        public string Ping()
-        {
-            Console.WriteLine("!!!!!!!!!!!   Pong");
-            return "!!!!!!!!!!!   Pong";
-        }
         public void Dispose()
         {
-            Console.WriteLine("!!!!!!!!!!! DISPOSE  PostgreSQLBizFlowStorage");
+            Console.WriteLine("[DEBUG] - PostgreSQLBizFlowStorage - Dispose");
         }
 
         public async Task AddPipelineAsync(Pipeline pipeline, CancellationToken ct = default)
         {
-            var (columns, values, parameters) = BuildInsertParametersHeader(pipeline);
 
-            var sql = $@"
-                INSERT INTO public.bf_pipelines ({columns})
-                VALUES ({values})
-                RETURNING *";
 
-            // какая еще есть бизнес логика кроме инсертов в клиентском коде  общий Add - метод как в примере,  логика ретрая в ExecuteWithConnectionAsync, 
 
-            await ExecuteWithConnectionAsync(async (connection, ct) =>
-            {
-                await using var transaction = await connection.BeginTransactionAsync();
-                try
-                {
+            var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+            var pipelineItemRepository = _uow.GetRepository<Entities.PipelineItem>();
 
-                    await using var cmd = new NpgsqlCommand(sql, connection, transaction);
-                    AddInsertParametersHeader(cmd, pipeline);
 
-                    var id = (long) await cmd.ExecuteScalarAsync();
 
-                    foreach (var item in pipeline.PipelineItems)
-                    {
-                        var (columns, values, parameters) = BuildInsertParametersItem(item, id);
+            throw new NotImplementedException();
 
-                        var sql_items = $@"
-                            INSERT INTO public.bf_pipeline_items ({columns})
-                            VALUES ({values})
-                            RETURNING *";
 
-                        await using var cmd_item = new NpgsqlCommand(sql_items, connection, transaction);
-                        AddInsertParametersItem(cmd_item, item, id);
 
-                        await cmd_item.ExecuteNonQueryAsync();
-                    }
 
-                    await transaction.CommitAsync(ct);
-                }
-                catch (Exception)
-                {
-                    await transaction.RollbackAsync(ct);
-                    throw;
-                }
-            }, ct);
+
+
+
+            //var (columns, values, parameters) = BuildInsertParametersHeader(pipeline);
+
+            //var sql = $@"
+            //    INSERT INTO public.bf_pipelines ({columns})
+            //    VALUES ({values})
+            //    RETURNING *";
+
+            //// какая еще есть бизнес логика кроме инсертов в клиентском коде  общий Add - метод как в примере,  логика ретрая в ExecuteWithConnectionAsync, 
+
+            //await ExecuteWithConnectionAsync(async (connection, ct) =>
+            //{
+            //    await using var transaction = await connection.BeginTransactionAsync();
+            //    try
+            //    {
+
+            //        await using var cmd = new NpgsqlCommand(sql, connection, transaction);
+            //        AddInsertParametersHeader(cmd, pipeline);
+
+            //        var id = (long) await cmd.ExecuteScalarAsync();
+
+            //        foreach (var item in pipeline.PipelineItems)
+            //        {
+            //            var (columns, values, parameters) = BuildInsertParametersItem(item, id);
+
+            //            var sql_items = $@"
+            //                INSERT INTO public.bf_pipeline_items ({columns})
+            //                VALUES ({values})
+            //                RETURNING *";
+
+            //            await using var cmd_item = new NpgsqlCommand(sql_items, connection, transaction);
+            //            AddInsertParametersItem(cmd_item, item, id);
+
+            //            await cmd_item.ExecuteNonQueryAsync();
+            //        }
+
+            //        await transaction.CommitAsync(ct);
+            //    }
+            //    catch (Exception)
+            //    {
+            //        await transaction.RollbackAsync(ct);
+            //        throw;
+            //    }
+            //}, ct);
         }
 
 

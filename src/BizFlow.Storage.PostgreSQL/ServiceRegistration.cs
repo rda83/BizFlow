@@ -1,5 +1,7 @@
 ﻿using BizFlow.Core.Contracts.Storage;
+using BizFlow.Storage.PostgreSQL.Entities;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
+using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BizFlow.Storage.PostgreSQL
@@ -11,6 +13,10 @@ namespace BizFlow.Storage.PostgreSQL
 
             services.AddSingleton(sp => new ConnectionFactory("Host=localhost;Port=5432;Database=mydb;Username=myuser;Password=mysecretpassword"));
 
+            services.AddScoped<IRepository<Pipeline>, PipelineRepository>();
+            services.AddScoped<IRepository<PipelineItem>, PipelineItemRepository>();
+
+            services.AddScoped<UnitOfWork>();
             services.AddScoped<IBizFlowStorage, PostgreSQLBizFlowStorage>();
         }
     }

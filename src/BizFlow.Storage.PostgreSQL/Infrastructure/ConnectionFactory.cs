@@ -18,13 +18,6 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure
         public async Task<NpgsqlConnection> CreateConnectionAsync(CancellationToken ct = default)
         {
             var connection = await DataSource.OpenConnectionAsync(ct);
-
-            await using (var cmd = new NpgsqlCommand("SET search_path TO public", connection))
-            {
-                await cmd.ExecuteNonQueryAsync();
-            }
-
-
             return connection;
         }
 
