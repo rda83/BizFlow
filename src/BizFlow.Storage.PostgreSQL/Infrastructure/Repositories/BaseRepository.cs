@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Npgsql;
+﻿using Npgsql;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
@@ -19,7 +18,7 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 
         public async Task<TEntity> AddAsync(TEntity entity, CancellationToken ct = default)
         {
-            var (columns, values, parameters) = BuildInsertParameters(entity);
+            var (columns, values) = BuildInsertParameters();
 
             var sql = $@"
                 INSERT INTO public.{TableName} ({columns})
@@ -35,7 +34,6 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
                 await reader.ReadAsync(ct);
 
                 return MapToEntity(reader);
-
             }, ct);
             return result;
         }
@@ -44,18 +42,13 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             Func<NpgsqlConnection, CancellationToken, Task<TEntity>> operation,
             CancellationToken ct = default)
         {
-
-            throw new NotImplementedException();
-
-            //await using var connection = await _connectionFactory.CreateConnectionAsync(ct);
-            //return await operation(connection, ct);
+            var connection = await _uow!.GetConnectionAsync();
+            return await operation(connection, ct);
         }
 
         protected abstract TEntity MapToEntity(NpgsqlDataReader reader);
-        protected abstract (string columns, string values, IEnumerable<string> paramNames)
-            BuildInsertParameters(TEntity entity);
+        protected abstract (string columns, string values) BuildInsertParameters();
         protected abstract void AddInsertParameters(NpgsqlCommand cmd, TEntity entity);
-
 
     }
 }

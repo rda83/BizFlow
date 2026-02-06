@@ -11,7 +11,7 @@ namespace BizFlow.Storage.PostgreSQL
         public static void AddPostgreSQLBizFlowStorage(this IServiceCollection services)
         {
 
-            services.AddSingleton(sp => new ConnectionFactory("Host=localhost;Port=5432;Database=mydb;Username=myuser;Password=mysecretpassword"));
+            services.AddSingleton(sp => new ConnectionFactory("Host=localhost;Port=5432;Database=mydb;Username=client-biz-flow;Password=mysecretpassword"));
 
             services.AddScoped<IRepository<Pipeline>, PipelineRepository>();
             services.AddScoped<IRepository<PipelineItem>, PipelineItemRepository>();
