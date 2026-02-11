@@ -9,15 +9,12 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
     internal class AddPipelineHandler : IAddPipelineHandler
     {
         private readonly BizFlowJobManager _bizFlowJobManager;
-        private readonly IPipelineService _pipelineService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IBizFlowStorage _storage;
 
-        public AddPipelineHandler(BizFlowJobManager bizFlowJobManager,
-            IPipelineService pipelineService, IServiceScopeFactory scopeFactory, IBizFlowStorage storage)
+        public AddPipelineHandler(BizFlowJobManager bizFlowJobManager, IServiceScopeFactory scopeFactory, IBizFlowStorage storage)
         {
             _bizFlowJobManager = bizFlowJobManager;
-            _pipelineService = pipelineService;
             _scopeFactory = scopeFactory;
             _storage = storage;
         }
@@ -27,11 +24,11 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
         {
             var result = new BizFlowChangingResult() { Success = true };
 
-            var pipelineNameExist = await _pipelineService.PipelineNameExist(command.Name, cancellationToken);
+            var pipelineNameExist = await _storage.PipelineNameExistAsync(command.Name, cancellationToken);
             if (pipelineNameExist)
             {
                 result.Success = false;
-                result.Message = $"Пайплайн с именем: {command.Name} уже существует."; // TODO:i18n
+                result.Message = $"A pipeline with the name: {command.Name} already exists.";
                 return result;
             }
 
@@ -62,7 +59,7 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
             if (result.CheckItemsErrors.Any())
             {
                 result.Success = false;
-                result.Message = $"Обнаружены ошибки при проверке параметров элементов пайплайна."; // TODO:i18n
+                result.Message = $"Errors were found while validating pipeline item parameters.";
                 return result;
             }
 
@@ -81,11 +78,9 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
                 item.Options = i.Options;
                 return item;
             }).ToList();
-
-            //await _pipelineService.AddPipelineAsync(pipeline, cancellationToken);
-            //await _bizFlowJobManager.CrerateTrigger(command.Name, command.CronExpression);
-
+            
             await _storage.AddPipelineAsync(pipeline);
+            await _bizFlowJobManager.CrerateTrigger(command.Name, command.CronExpression);
 
             return result;
         }

@@ -38,6 +38,30 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             return result;
         }
 
+        public async Task<TEntity> GetByColumnAsync(string fieldName, object value, CancellationToken ct = default)
+        {
+            var sql = $@"SELECT * FROM public.{TableName} WHERE {fieldName} = @value";
+
+            var result = await ExecuteWithConnectionAsync(async (connection, ct) =>
+            {
+                await using var cmd = new NpgsqlCommand(sql, connection);
+                cmd.Parameters.AddWithValue("value", value);
+
+                await using var reader = await cmd.ExecuteReaderAsync(ct);
+                await reader.ReadAsync(ct);
+
+                if (!reader.HasRows)
+                {
+                    return default;
+                }
+
+                return MapToEntity(reader);
+            }, ct);
+
+
+            return result;
+        }
+
         protected async Task<TEntity> ExecuteWithConnectionAsync(
             Func<NpgsqlConnection, CancellationToken, Task<TEntity>> operation,
             CancellationToken ct = default)
@@ -49,6 +73,7 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
         protected abstract TEntity MapToEntity(NpgsqlDataReader reader);
         protected abstract (string columns, string values) BuildInsertParameters();
         protected abstract void AddInsertParameters(NpgsqlCommand cmd, TEntity entity);
+
 
     }
 }

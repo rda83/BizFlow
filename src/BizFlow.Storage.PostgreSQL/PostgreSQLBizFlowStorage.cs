@@ -55,5 +55,20 @@ namespace BizFlow.Storage.PostgreSQL
                 throw;
             }
         }
+
+        public async Task<bool> PipelineNameExistAsync(string pipelineName, CancellationToken ct = default)
+        {
+            try
+            {
+                var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+                var result = await pipelineRepository.GetByColumnAsync("name", pipelineName, ct);
+           
+                return result != null;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

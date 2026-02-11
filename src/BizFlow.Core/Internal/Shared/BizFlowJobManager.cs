@@ -36,7 +36,7 @@ namespace BizFlow.Core.Internal.Shared
                 GroupMatcher<TriggerKey>.AnyGroup(), cancellationToken);
 
             var triggerKey = allTriggerKeys.Where(i => i.Name == pipelineName).FirstOrDefault() 
-                ?? throw new InvalidOperationException($"TriggerKey with name '{pipelineName}' not found."); // TODO:i18n
+                ?? throw new InvalidOperationException($"TriggerKey with name '{pipelineName}' not found.");
 
             await scheduler.UnscheduleJob(triggerKey, cancellationToken);
         }
@@ -48,7 +48,7 @@ namespace BizFlow.Core.Internal.Shared
             {
                 throw new ArgumentNullException(
                     nameof(pipelineName),
-                    "Имя пайплайна не может быть null, пустым или состоять только из пробелов." // TODO:i18n
+                    "Pipeline name cannot be null, empty, or consist only of white-space characters."
                 );
             }
 
@@ -56,7 +56,7 @@ namespace BizFlow.Core.Internal.Shared
             {
                 throw new ArgumentNullException(
                     nameof(launchId),
-                    "Идентификатор запуска не может быть null, пустым или состоять только из пробелов." // TODO:i18n
+                    "Run identifier cannot be null, empty, or consist only of white-space characters."
                 );
             }
 
@@ -64,7 +64,7 @@ namespace BizFlow.Core.Internal.Shared
             var isTriggerExists = await TriggerCheckExists(triggerName, cancellationToken);
             if (isTriggerExists)
             {
-                throw new Exception($"Триггер с ключом: {triggerName} уже существует.");
+                throw new Exception($"A trigger with the key: {triggerName} already exists.");
             }
 
             var trigger = TriggerBuilder
