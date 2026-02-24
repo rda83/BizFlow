@@ -13,7 +13,7 @@ namespace BizFlow.Core.Internal.Shared
             this.schedulerFactory = schedulerFactory;
         }
 
-        public async Task CrerateTrigger(string name, string cronExpression,
+        public async Task CrerateTrigger(string name, string cronExpression,  // FIXME: rename CrerateTrigger -> CreateTrigger
             CancellationToken cancellationToken = default)
         {
             var scheduler = await schedulerFactory.GetScheduler(cancellationToken);

@@ -1,4 +1,6 @@
-﻿using Npgsql;
+﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using Npgsql;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
@@ -62,6 +64,32 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             return result;
         }
 
+        public async Task<IEnumerable<TEntity>> GetPagedAsync(long lastId, int limit = 100, CancellationToken ct = default)
+        {
+            var sql = $@"
+                SELECT * 
+                FROM public.{TableName} WHERE id > @lastId
+                ORDER BY id
+                LIMIT @limit";
+
+            var connection = await _uow!.GetConnectionAsync();
+
+            await using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("lastId", lastId);
+            cmd.Parameters.AddWithValue("limit", limit);
+
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+
+            List<TEntity> result = [];
+
+            while (await reader.ReadAsync(ct))
+            {
+                if (!reader.HasRows) { continue; }
+                result.Add(MapToEntity(reader));
+            }
+            return result;
+        }
+
         protected async Task<TEntity> ExecuteWithConnectionAsync(
             Func<NpgsqlConnection, CancellationToken, Task<TEntity>> operation,
             CancellationToken ct = default)
@@ -73,7 +101,5 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
         protected abstract TEntity MapToEntity(NpgsqlDataReader reader);
         protected abstract (string columns, string values) BuildInsertParameters();
         protected abstract void AddInsertParameters(NpgsqlCommand cmd, TEntity entity);
-
-
     }
 }

@@ -65,10 +65,30 @@ namespace BizFlow.Storage.PostgreSQL
            
                 return result != null;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw ex;
+                throw;
             }
+        }
+
+        public async Task<(IReadOnlyCollection<Pipeline> Pipelines, long MaxId)> GetPipelinesAsync(
+            long lastId, int limit = 100, CancellationToken cancellationToken = default)
+        {
+            long maxId = lastId;
+            List<Pipeline> result = [];
+
+            var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+            var entities = await pipelineRepository.GetPagedAsync(lastId, limit, cancellationToken);
+
+            if (entities != null)
+            {
+                foreach (var item in entities)
+                {
+                    maxId = Math.Max(maxId, item.Id);
+                    result.Add(item.ToCoreModel());
+                }
+            }
+            return (result.AsReadOnly(), maxId);
         }
     }
 }

@@ -6,12 +6,11 @@ using Npgsql;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure
 {
-    class UnitOfWork : IAsyncDisposable
+    class UnitOfWork : IAsyncDisposable, IDisposable
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ConnectionFactory _connectionFactory;
         private readonly ILogger<UnitOfWork> _logger;
-
 
         private NpgsqlConnection? _connection;
         private NpgsqlTransaction? _transaction;
@@ -95,6 +94,11 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure
             }
 
             Console.WriteLine("[DEBUG] UnitOfWork - DisposeAsync");          
+        }
+
+        public void Dispose()
+        {
+            Task.Run(async () => await DisposeAsync()).GetAwaiter().GetResult();
         }
     }
 }

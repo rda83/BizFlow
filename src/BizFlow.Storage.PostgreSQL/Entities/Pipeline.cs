@@ -21,5 +21,17 @@ namespace BizFlow.Storage.PostgreSQL.Entities
             Description = pipelineDto.Description;
             Blocked = pipelineDto.Blocked;
         }
+
+        public Core.Model.Pipeline ToCoreModel()
+        {
+            var result = new Core.Model.Pipeline()
+            {
+                Name = Name,
+                CronExpression = CronExpression,
+                Description = Description,
+                Blocked = Blocked,
+            };
+            return result;
+        }
     }
 }
