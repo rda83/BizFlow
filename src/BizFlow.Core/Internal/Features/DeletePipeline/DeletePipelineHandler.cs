@@ -1,4 +1,5 @@
 ﻿using BizFlow.Core.Contracts;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;
 
@@ -8,12 +9,14 @@ namespace BizFlow.Core.Internal.Features.DeletePipeline
     {
         private readonly BizFlowJobManager _bizFlowJobManager;
         private readonly IPipelineService _pipelineService;
+        private readonly IBizFlowStorage _storage;
 
         public DeletePipelineHandler(BizFlowJobManager bizFlowJobManager,
-            IPipelineService pipelineService)
+            IPipelineService pipelineService, IBizFlowStorage storage)
         {
             _bizFlowJobManager = bizFlowJobManager;
             _pipelineService = pipelineService;
+            _storage = storage;
         }
 
         public async Task<BizFlowChangingResult> DeletePipelineAsync(DeletePipelineCommand command, 
@@ -23,11 +26,11 @@ namespace BizFlow.Core.Internal.Features.DeletePipeline
 
             try
             {
-                var pipelineNameExist = await _pipelineService.PipelineNameExist(command.Name, cancellationToken);
+                var pipelineNameExist = await _storage.PipelineNameExistAsync(command.Name, cancellationToken);
                 if (!pipelineNameExist)
                 {
                     result.Success = false;
-                    result.Message = $"Пайплайна с именем: {command.Name} не существует."; // TODO:i18n
+                    result.Message = $"A pipeline with the name: {command.Name} does not exist.";
                 }
                 else
                 {
@@ -40,7 +43,6 @@ namespace BizFlow.Core.Internal.Features.DeletePipeline
                 result.Success = false;
                 result.Message = $"{ex.Message}";
             }
-
             return result;
         }
     }

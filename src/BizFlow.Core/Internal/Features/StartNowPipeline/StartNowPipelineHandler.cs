@@ -1,4 +1,4 @@
-﻿using BizFlow.Core.Contracts;
+﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;
 namespace BizFlow.Core.Internal.Features.StartNowPipeline
@@ -6,13 +6,12 @@ namespace BizFlow.Core.Internal.Features.StartNowPipeline
     public class StartNowPipelineHandler : IStartNowPipelineHandler
     {
         private readonly BizFlowJobManager _bizFlowJobManager;
-        private readonly IPipelineService _pipelineService;
+        private readonly IBizFlowStorage _storage;
 
-        public StartNowPipelineHandler(BizFlowJobManager bizFlowJobManager,
-            IPipelineService pipelineService)
+        public StartNowPipelineHandler(BizFlowJobManager bizFlowJobManager, IBizFlowStorage storage)
         {
             _bizFlowJobManager = bizFlowJobManager;
-            _pipelineService = pipelineService;
+            _storage = storage;
         }
 
         public async Task<BizFlowChangingResult> StartNowPipelineAsync(StartNowPipelineCommand command,
@@ -23,18 +22,18 @@ namespace BizFlow.Core.Internal.Features.StartNowPipeline
             var result = new BizFlowChangingResult() { Success = true };
             try
             {
-                var isPipelineNameExist = await _pipelineService.PipelineNameExist(pipelineName, cancellationToken);
+                var isPipelineNameExist = await _storage.PipelineNameExistAsync(pipelineName, cancellationToken);
                 if (!isPipelineNameExist)
                 {
                     result.Success = false;
-                    result.Message = $"Пайплайна с именем: {pipelineName} не существует."; // TODO:i18n
+                    result.Message = $"A pipeline with the name: {pipelineName} does not exist.";
                     return result;
                 }
 
                 var launchId = Guid.NewGuid().ToString();
                 await _bizFlowJobManager.StartNow(pipelineName, launchId, cancellationToken);
 
-                result.Message = $"Пайплайн: {pipelineName} запущен."; // TODO:i18n
+                result.Message = $"Pipeline: {pipelineName} has been started.";
                 result.LaunchId = launchId;
 
                 return result;
@@ -42,7 +41,7 @@ namespace BizFlow.Core.Internal.Features.StartNowPipeline
             catch (Exception ex)
             {
                 result.Success = false;
-                result.Message = $"Ошибка при запуске пайплайна {pipelineName}: {ex.Message}"; // TODO:i18n
+                result.Message = $"Error starting pipeline {pipelineName}: {ex.Message}";
                 return result;
             }          
         }

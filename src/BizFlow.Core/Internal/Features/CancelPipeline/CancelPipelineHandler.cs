@@ -1,18 +1,19 @@
 ﻿using BizFlow.Core.Contracts;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 
 namespace BizFlow.Core.Internal.Features.CancelPipeline
 {
     public class CancelPipelineHandler : ICancelPipelineHandler
     {
-        private readonly IPipelineService _pipelineService;
         private readonly ICancelPipelineRequestService _cancelPipelineRequestService;
+        private readonly IBizFlowStorage _storage;
 
-        public CancelPipelineHandler(IPipelineService pipelineService, 
-            ICancelPipelineRequestService cancelPipelineRequestService)
+        public CancelPipelineHandler(ICancelPipelineRequestService cancelPipelineRequestService,
+            IBizFlowStorage storage)
         {
-            _pipelineService = pipelineService;
             _cancelPipelineRequestService = cancelPipelineRequestService;
+            _storage = storage;
         }
 
         public async Task<BizFlowChangingResult> CancelPipeline(CancelPipelineCommand command,
@@ -20,11 +21,11 @@ namespace BizFlow.Core.Internal.Features.CancelPipeline
         {
             var result = new BizFlowChangingResult() { Success = true };
 
-            var pipelineNameExist = await _pipelineService.PipelineNameExist(command.PipelineName, cancellationToken);
+            var pipelineNameExist = await _storage.PipelineNameExistAsync(command.PipelineName, cancellationToken);
             if (!pipelineNameExist)
             {
                 result.Success = false;
-                result.Message = $"Пайплайна с именем: {command.PipelineName} не существует."; // TODO:i18n
+                result.Message = $"A pipeline with the name: {command.PipelineName} does not exist.";
                 return result;
             }
 
