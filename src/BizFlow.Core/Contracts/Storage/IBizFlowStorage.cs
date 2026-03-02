@@ -8,6 +8,7 @@ namespace BizFlow.Core.Contracts.Storage
         Task<bool> PipelineNameExistAsync(string pipelineName, CancellationToken cancellationToken = default);
         Task<(IReadOnlyCollection<Pipeline> Pipelines, long MaxId)> GetPipelinesAsync(long lastId, int limit = 100, 
             CancellationToken cancellationToken = default);
+        Task<Pipeline?> GetPipelineAsync(string pipelineName, CancellationToken cancellationToken = default);
     }
 }
 

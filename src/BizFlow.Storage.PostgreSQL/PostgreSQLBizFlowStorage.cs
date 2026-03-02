@@ -61,7 +61,7 @@ namespace BizFlow.Storage.PostgreSQL
             try
             {
                 var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
-                var result = await pipelineRepository.GetByColumnAsync("name", pipelineName, ct);
+                var result = await pipelineRepository.GetByUniqueColumnAsync("name", pipelineName, ct);
            
                 return result != null;
             }
@@ -89,6 +89,26 @@ namespace BizFlow.Storage.PostgreSQL
                 }
             }
             return (result.AsReadOnly(), maxId);
+        }
+
+        public async Task<Pipeline?> GetPipelineAsync(string pipelineName, CancellationToken cancellationToken = default)
+        {
+
+            var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+            var pipelineItemRepository = _uow.GetRepository<Entities.PipelineItem>();
+
+            var pipelineEntity = await pipelineRepository.GetByUniqueColumnAsync("name", pipelineName);
+
+            if (pipelineEntity != null)
+            {
+                var pipelineItems = await pipelineItemRepository.GetByColumnAsync("pipeline_id", pipelineEntity.Id);
+                var result = pipelineEntity.ToCoreModel(pipelineItems);
+                return result;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

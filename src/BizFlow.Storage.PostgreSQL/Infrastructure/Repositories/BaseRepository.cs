@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
-using Npgsql;
+﻿using Npgsql;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
@@ -40,7 +38,7 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             return result;
         }
 
-        public async Task<TEntity> GetByColumnAsync(string fieldName, object value, CancellationToken ct = default)
+        public async Task<TEntity> GetByUniqueColumnAsync(string fieldName, object value, CancellationToken ct = default)
         {
             var sql = $@"SELECT * FROM public.{TableName} WHERE {fieldName} = @value";
 
@@ -60,6 +58,26 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
                 return MapToEntity(reader);
             }, ct);
 
+            return result;
+        }
+
+        public async Task<IEnumerable<TEntity>> GetByColumnAsync(string fieldName, object value, CancellationToken ct = default)
+        {
+            var sql = $@"SELECT * FROM public.{TableName} WHERE {fieldName} = @value";
+
+            var connection = await _uow!.GetConnectionAsync();
+            await using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("value", value);
+            
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+
+            List<TEntity> result = [];
+
+            while (await reader.ReadAsync(ct))
+            {
+                if (!reader.HasRows) { continue; }
+                result.Add(MapToEntity(reader));
+            }
 
             return result;
         }

@@ -26,5 +26,19 @@ namespace BizFlow.Storage.PostgreSQL.Entities
             Blocked = pipelineItemDto.Blocked;
             Options = pipelineItemDto.Options;
         }
+
+        public Core.Model.PipelineItem ToCoreModel()
+        {
+            var result = new Core.Model.PipelineItem()
+            {
+                Id = Id,
+                TypeOperationId = TypeOperationId,
+                SortOrder = SortOrder,
+                Description = Description,
+                Blocked = Blocked,
+                Options = Options,
+            };
+            return result;  
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿
 using BizFlow.Core.Contracts;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Shared.ExecutionServices;
 using BizFlow.Core.Model;
 using BizFlow.Core.Model.ExecutionServices;
@@ -10,17 +11,19 @@ namespace BizFlow.Core.Internal.Shared
 {
     public class PipelineExecutor
     {
-        private readonly IPipelineService _pipelineService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly PipelineExecutorJournal _journal;
         private readonly ICancelPipelineRequestService _cancelPipelineRequestService;
         private readonly CancellationMonitorService _cancellationMonitor;
+        private readonly IBizFlowStorage _storage;
 
-        public PipelineExecutor(IPipelineService pipelineService, IServiceScopeFactory scopeFactory,
+        public PipelineExecutor(
+            IBizFlowStorage storage,
+            IServiceScopeFactory scopeFactory,
             PipelineExecutorJournal journal, ICancelPipelineRequestService cancelPipelineRequestService,
             CancellationMonitorService cancellationMonitor)
         {
-            _pipelineService = pipelineService;
+            _storage = storage;
             _scopeFactory = scopeFactory;
             _journal = journal;
             _cancelPipelineRequestService = cancelPipelineRequestService;
@@ -37,11 +40,11 @@ namespace BizFlow.Core.Internal.Shared
             var pipelineName = triggerInfo.PipelineName;
             var isStartNowPipeline = triggerInfo.IsStartNowPipeline;
 
-            var pipeline = await _pipelineService.GetPipelineAsync(pipelineName);
-                
+            var pipeline = await _storage.GetPipelineAsync(pipelineName);
+
             if (pipeline == null)
             {
-                await _journal.AddError(launchId, isStartNowPipeline, $"Не найден элемент для исполнения: {pipelineName}");//TODO i18n
+                await _journal.AddError(launchId, isStartNowPipeline, $"The element for execution was not found: {pipelineName}");
                 return;
             }
                               

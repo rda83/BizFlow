@@ -1,4 +1,6 @@
 ﻿
+using Microsoft.Extensions.Options;
+
 namespace BizFlow.Storage.PostgreSQL.Entities
 {
     class Pipeline
@@ -22,7 +24,7 @@ namespace BizFlow.Storage.PostgreSQL.Entities
             Blocked = pipelineDto.Blocked;
         }
 
-        public Core.Model.Pipeline ToCoreModel()
+        public Core.Model.Pipeline ToCoreModel(IEnumerable<PipelineItem>? items = null)
         {
             var result = new Core.Model.Pipeline()
             {
@@ -31,6 +33,11 @@ namespace BizFlow.Storage.PostgreSQL.Entities
                 Description = Description,
                 Blocked = Blocked,
             };
+
+            if (items != null)
+            {
+                result.PipelineItems = items.Select(i => i.ToCoreModel()).ToList();
+            }
             return result;
         }
     }

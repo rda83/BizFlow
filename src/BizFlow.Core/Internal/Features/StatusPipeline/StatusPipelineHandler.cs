@@ -1,12 +1,13 @@
 ﻿using BizFlow.Core.Contracts;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 
 namespace BizFlow.Core.Internal.Features.StatusPipeline
 {
     public class StatusPipelineHandler : IStatusPipelineHandler
     {
-        private readonly IPipelineService _pipelineService;
         private readonly IBizFlowJournal _bizFlowJournal;
+        private readonly IBizFlowStorage _storage;
 
         private static readonly HashSet<TypeBizFlowJournalAction> _startStatuses = new()
         {
@@ -24,10 +25,10 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
             TypeBizFlowJournalAction.Success
         };
 
-        public StatusPipelineHandler(IPipelineService pipelineService, IBizFlowJournal bizFlowJournal)
+        public StatusPipelineHandler(IBizFlowJournal bizFlowJournal, IBizFlowStorage storage)
         {
-            _pipelineService = pipelineService;
             _bizFlowJournal = bizFlowJournal;
+            _storage = storage;
         }
         public async Task<StatusPipelineResult> StatusPipeline(StatusPipelineCommand command,
             CancellationToken cancellationToken = default)
@@ -35,9 +36,9 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
             ArgumentNullException.ThrowIfNull(command);
             ArgumentException.ThrowIfNullOrWhiteSpace(command.Name);
 
-            var pipeLine = await _pipelineService.GetPipelineAsync(command.Name, cancellationToken);
+            var pipeLine = await _storage.GetPipelineAsync(command.Name, cancellationToken);
             if (pipeLine == null)
-                throw new InvalidOperationException($"Пайплайн '{command.Name}' не найден"); // TODO:i18n
+                throw new InvalidOperationException($"Pipeline '{command.Name}' not found");
 
             var pipelineItems = pipeLine.PipelineItems
                 .OrderBy(i => i.SortOrder)
