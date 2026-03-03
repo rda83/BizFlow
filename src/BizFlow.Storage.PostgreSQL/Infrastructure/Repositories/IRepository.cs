@@ -9,5 +9,6 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
         Task<TEntity> GetByUniqueColumnAsync(string fieldName, object value, CancellationToken ct = default);
         Task<IEnumerable<TEntity>> GetByColumnAsync(string fieldName, object value, CancellationToken ct = default);
         Task<IEnumerable<TEntity>> GetPagedAsync(long lastId, int limit = 100, CancellationToken ct = default);
+        Task<int> DeleteAsync(string fieldName, object value, CancellationToken ct = default);
     }
 }

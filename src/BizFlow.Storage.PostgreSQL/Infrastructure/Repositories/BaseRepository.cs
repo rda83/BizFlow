@@ -108,6 +108,18 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             return result;
         }
 
+        public async Task<int> DeleteAsync(string fieldName, object value, CancellationToken ct = default)
+        {
+            var sql = $@"DELETE FROM public.{TableName} WHERE {fieldName} = @value";
+            var connection = await _uow!.GetConnectionAsync();
+
+            await using var cmd = new NpgsqlCommand(sql, connection);
+            cmd.Parameters.AddWithValue("value", value);
+
+            var rowsAffected = await cmd.ExecuteNonQueryAsync();
+            return rowsAffected;
+        }
+
         protected async Task<TEntity> ExecuteWithConnectionAsync(
             Func<NpgsqlConnection, CancellationToken, Task<TEntity>> operation,
             CancellationToken ct = default)

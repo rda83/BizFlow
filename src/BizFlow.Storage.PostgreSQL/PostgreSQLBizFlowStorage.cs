@@ -110,5 +110,12 @@ namespace BizFlow.Storage.PostgreSQL
                 return null;
             }
         }
+
+        public async Task<int> DeletePipelineAsync(string pipelineName, CancellationToken cancellationToken = default)
+        {
+            var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+            var result = await pipelineRepository.DeleteAsync("name", pipelineName, cancellationToken);
+            return result;
+        }
     }
 }
