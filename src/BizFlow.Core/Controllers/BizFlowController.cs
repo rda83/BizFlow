@@ -70,7 +70,7 @@ namespace BizFlow.Core.Controllers
         /// <param name="pageSize">Количество записей на странице</param>
         /// <returns>Список записей и общее количество</returns>
         [HttpGet("journal-records")]
-        [ProducesResponseType(typeof(PagedResponse<BizFlowJournalRecord>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(PagedResponse<JournalRecord>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetJournalRecordsPaged(
             [FromServices] IBizFlowJournal journal,
@@ -84,7 +84,7 @@ namespace BizFlow.Core.Controllers
 
                 var records = await journal.GetPagedAsync(pageNumber, pageSize);
 
-                var response = new PagedResponse<BizFlowJournalRecord>()
+                var response = new PagedResponse<JournalRecord>()
                 {
                     Data = records,
                     PageNumber = pageNumber,

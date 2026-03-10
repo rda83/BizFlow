@@ -1,5 +1,4 @@
 ﻿
-using Microsoft.Extensions.Options;
 
 namespace BizFlow.Storage.PostgreSQL.Entities
 {

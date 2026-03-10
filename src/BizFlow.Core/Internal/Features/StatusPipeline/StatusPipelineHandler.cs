@@ -44,7 +44,7 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
                 .OrderBy(i => i.SortOrder)
                 .ToList();
 
-            IEnumerable<BizFlowJournalRecord> journalRecords = [];
+            IEnumerable<JournalRecord> journalRecords = [];
             var launchId = await _bizFlowJournal.GetLastLaunchId(command.Name);
             if (!string.IsNullOrEmpty(launchId))
             {
@@ -62,7 +62,7 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
             var firstAction = journalRecords.FirstOrDefault();
             if (firstAction != null)
             {
-                result.IsStartNowPipeline = firstAction.IsStartNowPipeline;
+                result.IsStartNowPipeline = firstAction.IsStartNow;
             }
 
             foreach (var item in pipelineItems)

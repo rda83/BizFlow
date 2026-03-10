@@ -1,7 +1,7 @@
 ﻿
 namespace BizFlow.Core.Model
 {
-    public class BizFlowJournalRecord
+    public class JournalRecord
     {
         public DateTime Period { get; set; }
         public string PipelineName { get; set; }
@@ -13,6 +13,6 @@ namespace BizFlow.Core.Model
         public string LaunchId { get; set; }
         public string Message { get; set; }
         public string Trigger { get; set; }
-        public bool IsStartNowPipeline { get; set; }
+        public bool IsStartNow { get; set; }
     }
 }

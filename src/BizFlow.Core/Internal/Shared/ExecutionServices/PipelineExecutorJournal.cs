@@ -14,7 +14,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddError(string launchId, bool isStartNowPipeline, string msg)
         {
-            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            await _journal.AddRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = string.Empty,
@@ -26,12 +26,12 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 LaunchId = launchId,
                 Message = msg,
                 Trigger = string.Empty,
-                IsStartNowPipeline = isStartNowPipeline,
+                IsStartNow = isStartNowPipeline,
             });
         }
         public async Task AddBlockedPipeline(string launchId, bool isStartNowPipeline, string pipelineName)
         {
-            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            await _journal.AddRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipelineName,
@@ -43,12 +43,12 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 LaunchId = launchId,
                 Message = string.Empty,
                 Trigger = string.Empty,
-                IsStartNowPipeline = isStartNowPipeline,
+                IsStartNow = isStartNowPipeline,
             });
         }
         public async Task AddStart(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            await _journal.AddRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -60,12 +60,12 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 LaunchId = launchId,
                 Message = string.Empty,
                 Trigger = pipeline.CronExpression,
-                IsStartNowPipeline = isStartNowPipeline,
+                IsStartNow = isStartNowPipeline,
             });
         }
         public async Task AddBlockedPipelineItem(string launchId, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            await _journal.AddRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -81,7 +81,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddSuccess(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            await _journal.AddRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -93,12 +93,12 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 LaunchId = launchId,
                 Message = string.Empty,
                 Trigger = pipeline.CronExpression,
-                IsStartNowPipeline = isStartNowPipeline,
+                IsStartNow = isStartNowPipeline,
             });
         }
         public async Task AddError(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            await _journal.AddRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -110,12 +110,12 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 LaunchId = launchId,
                 Message = string.Empty,
                 Trigger = pipeline.CronExpression,
-                IsStartNowPipeline = isStartNowPipeline,
+                IsStartNow = isStartNowPipeline,
             });
         }
         public async Task AddCanceled(CancelOperationArgs args)
         {
-            await _journal.AddRecordAsync(new BizFlowJournalRecord()
+            await _journal.AddRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = args.PipelineName,
@@ -127,7 +127,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 LaunchId = args.LaunchId,
                 Message = $"Операция отменена. Ид запроса на отмену: {args.CancellationRequestId}", //TODO i18n
                 Trigger = args.Trigger,
-                IsStartNowPipeline = args.IsStartNowPipeline,
+                IsStartNow = args.IsStartNowPipeline,
             });
         }
     }
