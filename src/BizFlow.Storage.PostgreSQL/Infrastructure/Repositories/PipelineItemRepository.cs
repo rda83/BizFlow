@@ -15,6 +15,8 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 
         protected override void AddInsertParameters(NpgsqlCommand cmd, PipelineItem entity)
         {
+            //TODO: NpgsqlCommandExtensions
+
             cmd.Parameters.AddWithValue("pipeline_id", entity.PipelineId);
             cmd.Parameters.AddWithValue("type_operation_id", entity.TypeOperationId ?? string.Empty);
             cmd.Parameters.AddWithValue("sort_order", entity.SortOrder);

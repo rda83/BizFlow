@@ -1,6 +1,4 @@
-﻿//using BizFlow.Core.Model;
-//using BizFlow.Core.Model;
-using BizFlow.Storage.PostgreSQL.Entities;
+﻿using BizFlow.Storage.PostgreSQL.Entities;
 using BizFlow.Storage.PostgreSQL.Helpers;
 using Npgsql;
 
@@ -16,35 +14,42 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 
         protected override string TableName => "bf_journal";
 
-
         protected override void AddInsertParameters(NpgsqlCommand cmd, JournalRecord entity)
         {
-
-
-
-            //period
-            //pipeline_name
-            //item_description
-            //item_sort_order
-            //type_action
-            //type_operation_id
-            //launch_id
-            //message
-            //trigger
-            //is_start_now
-            //item_id
-
-
-
-
-            throw new NotImplementedException();
+            cmd.AddTimestampParameter("period", entity.Period);
+            cmd.AddTextParameter("pipeline_name", entity.PipelineName);
+            cmd.AddLongParameter("item_id", entity.ItemId);
+            cmd.AddTextParameter("item_description", entity.ItemDescription);
+            cmd.AddIntParameter("item_sort_order", entity.ItemSortOrder);
+            cmd.AddTextParameter("type_action", entity.TypeAction.ToString());
+            cmd.AddTextParameter("type_operation_id", entity.TypeOperationId);
+            cmd.AddTextParameter("launch_id", entity.LaunchId);
+            cmd.AddTextParameter("message", entity.Message);
+            cmd.AddTextParameter("trigger", entity.Trigger);
+            cmd.AddBooleanParameter("is_start_now", entity.IsStartNow);
         }
 
         protected override (string columns, string values) BuildInsertParameters()
         {
-            //new NpgsqlParameter("@status", entity.Status.ToString()));  // ToString()
+            var parameters = new List<string>
+            {
+                "period",
+                "pipeline_name",
+                "item_id",
+                "item_description",
+                "item_sort_order",
+                "type_action",
+                "type_operation_id",
+                "launch_id",
+                "message",
+                "trigger",
+                "is_start_now"
+            };
 
-            throw new NotImplementedException();
+            var columns = string.Join(", ", parameters);
+            var values = string.Join(", ", parameters.Select(k => $"@{k}"));
+
+            return (columns, values);
         }
 
         protected override JournalRecord MapToEntity(NpgsqlDataReader reader)

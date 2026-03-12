@@ -16,6 +16,8 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 
         protected override void AddInsertParameters(NpgsqlCommand cmd, Pipeline entity)
         {
+            //TODO: NpgsqlCommandExtensions
+
             cmd.Parameters.AddWithValue("name", entity.Name);
             cmd.Parameters.AddWithValue("cron_expression", entity.CronExpression);
             cmd.Parameters.AddWithValue("description", entity.Description ?? string.Empty);
