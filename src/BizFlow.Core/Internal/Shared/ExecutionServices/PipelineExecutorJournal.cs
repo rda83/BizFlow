@@ -1,5 +1,5 @@
 ﻿
-using BizFlow.Core.Contracts;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 using BizFlow.Core.Model.ExecutionServices;
 
@@ -7,14 +7,15 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
 {
     public class PipelineExecutorJournal
     {
-        private readonly IBizFlowJournal _journal;
-        public PipelineExecutorJournal(IBizFlowJournal journal)
+        private readonly IBizFlowStorage _bizFlowStorage;
+
+        public PipelineExecutorJournal(IBizFlowStorage bizFlowStorage)
         {
-            _journal = journal;
+            _bizFlowStorage = bizFlowStorage;
         }
         public async Task AddError(string launchId, bool isStartNowPipeline, string msg)
         {
-            await _journal.AddRecordAsync(new JournalRecord()
+            await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = string.Empty,
@@ -31,7 +32,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddBlockedPipeline(string launchId, bool isStartNowPipeline, string pipelineName)
         {
-            await _journal.AddRecordAsync(new JournalRecord()
+            await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipelineName,
@@ -48,7 +49,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddStart(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new JournalRecord()
+            await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -65,7 +66,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddBlockedPipelineItem(string launchId, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new JournalRecord()
+            await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -81,7 +82,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddSuccess(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new JournalRecord()
+            await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -98,7 +99,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddError(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
-            await _journal.AddRecordAsync(new JournalRecord()
+            await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = pipeline.Name,
@@ -115,7 +116,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
         }
         public async Task AddCanceled(CancelOperationArgs args)
         {
-            await _journal.AddRecordAsync(new JournalRecord()
+            await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
                 Period = DateTime.Now,
                 PipelineName = args.PipelineName,

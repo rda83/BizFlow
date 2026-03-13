@@ -15,6 +15,7 @@ namespace BizFlow.Storage.PostgreSQL
 
             services.AddScoped<IRepository<Pipeline>, PipelineRepository>();
             services.AddScoped<IRepository<PipelineItem>, PipelineItemRepository>();
+            services.AddScoped<IRepository<JournalRecord>, JournalRecordRepository>();
 
             services.AddScoped<UnitOfWork>();
             services.AddScoped<IBizFlowStorage, PostgreSQLBizFlowStorage>();

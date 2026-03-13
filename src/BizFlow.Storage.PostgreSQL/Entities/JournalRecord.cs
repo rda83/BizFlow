@@ -17,5 +17,22 @@ namespace BizFlow.Storage.PostgreSQL.Entities
         public string Message { get; set; } = string.Empty;
         public string Trigger { get; set; } = string.Empty;
         public bool IsStartNow { get; set; }
+
+        public JournalRecord() { }
+
+        public JournalRecord(Core.Model.JournalRecord journalRecord)
+        {
+            Period = journalRecord.Period;
+            PipelineName = journalRecord.PipelineName;
+            ItemId = journalRecord.ItemId;
+            ItemDescription = journalRecord.ItemDescription;
+            ItemSortOrder = journalRecord.ItemSortOrder;
+            TypeAction = journalRecord.TypeAction;
+            TypeOperationId = journalRecord.TypeOperationId;
+            LaunchId = journalRecord.LaunchId;
+            Message = journalRecord.Message;
+            Trigger = journalRecord.Trigger;
+            IsStartNow = journalRecord.IsStartNow;
+        }
     }
 }

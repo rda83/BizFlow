@@ -117,5 +117,12 @@ namespace BizFlow.Storage.PostgreSQL
             var result = await pipelineRepository.DeleteAsync("name", pipelineName, cancellationToken);
             return result;
         }
+
+        public async Task AddJournalRecordAsync(JournalRecord record, CancellationToken cancellationToken = default)
+        {
+            var recordEntity = new Entities.JournalRecord(record);
+            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+            await journalRecordRepository.AddAsync(recordEntity);
+        }
     }
 }
