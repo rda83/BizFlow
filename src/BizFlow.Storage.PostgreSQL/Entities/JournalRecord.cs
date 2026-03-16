@@ -34,5 +34,24 @@ namespace BizFlow.Storage.PostgreSQL.Entities
             Trigger = journalRecord.Trigger;
             IsStartNow = journalRecord.IsStartNow;
         }
+
+        public Core.Model.JournalRecord ToCoreModel()
+        {
+            var result = new Core.Model.JournalRecord()
+            {
+                Period = Period,
+                PipelineName = PipelineName,
+                ItemId = ItemId,
+                ItemDescription = ItemDescription,
+                ItemSortOrder = ItemSortOrder,
+                TypeAction = TypeAction,
+                TypeOperationId = TypeOperationId,
+                LaunchId = LaunchId,
+                Message = Message,
+                Trigger = Trigger,
+                IsStartNow = IsStartNow,
+            };
+            return result;
+        }
     }
 }

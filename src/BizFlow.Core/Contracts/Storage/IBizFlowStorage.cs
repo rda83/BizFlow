@@ -10,7 +10,10 @@ namespace BizFlow.Core.Contracts.Storage
             CancellationToken cancellationToken = default);
         Task<Pipeline?> GetPipelineAsync(string pipelineName, CancellationToken cancellationToken = default);
         Task<int> DeletePipelineAsync(string pipelineName, CancellationToken cancellationToken = default);
+        
         Task AddJournalRecordAsync(JournalRecord record, CancellationToken cancellationToken = default);
+        Task<(IReadOnlyCollection<JournalRecord> Pipelines, long MaxId)> GetJournalRecordsAsync(long lastId, int limit = 100,
+            CancellationToken cancellationToken = default);
     }
 }
 

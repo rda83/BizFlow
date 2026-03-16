@@ -1,4 +1,4 @@
-﻿using BizFlow.Core.Contracts;
+﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Features.AddPipeline;
 using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
@@ -66,29 +66,24 @@ namespace BizFlow.Core.Controllers
         /// <summary>
         /// Получает постраничный список записей журнала выполнения пайплайнов
         /// </summary>
-        /// <param name="pageNumber">Номер страницы (начиная с 1)</param>
-        /// <param name="pageSize">Количество записей на странице</param>
+        /// <param name="lastId"></param>
+        /// <param name="limit"></param>
         /// <returns>Список записей и общее количество</returns>
         [HttpGet("journal-records")]
         [ProducesResponseType(typeof(PagedResponse<JournalRecord>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> GetJournalRecordsPaged(
-            [FromServices] IBizFlowJournal journal,
-            [FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10)
+            [FromServices] IBizFlowStorage bizFlowStorage,
+            [FromQuery] long lastId = 1,
+            [FromQuery] int limit = 10)
         {
             try
             {
-                if (pageNumber < 1 || pageSize < 1)
-                    return BadRequest("Номер страницы и размер страницы должны быть больше 0");
-
-                var records = await journal.GetPagedAsync(pageNumber, pageSize);
+                var records = await bizFlowStorage.GetJournalRecordsAsync(lastId, limit);
 
                 var response = new PagedResponse<JournalRecord>()
                 {
-                    Data = records,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
+                    Data = records.Pipelines,
                 };
 
                 return Ok(response);

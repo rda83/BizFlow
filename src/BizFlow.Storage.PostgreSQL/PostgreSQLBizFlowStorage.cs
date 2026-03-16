@@ -1,6 +1,7 @@
 ﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
+using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace BizFlow.Storage.PostgreSQL
@@ -123,6 +124,26 @@ namespace BizFlow.Storage.PostgreSQL
             var recordEntity = new Entities.JournalRecord(record);
             var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
             await journalRecordRepository.AddAsync(recordEntity);
+        }
+
+        public async Task<(IReadOnlyCollection<JournalRecord> Pipelines, long MaxId)> GetJournalRecordsAsync(
+            long lastId, int limit = 100,  CancellationToken cancellationToken = default)
+        {
+            long maxId = lastId;
+            List<JournalRecord> result = [];
+
+            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+
+            var entities = await journalRecordRepository.GetPagedAsync(lastId, limit, cancellationToken);
+            if (entities != null)
+            {
+                foreach (var item in entities)
+                {
+                    maxId = Math.Max(maxId, item.Id);
+                    result.Add(item.ToCoreModel());
+                }
+            }
+            return (result.AsReadOnly(), maxId);
         }
     }
 }
