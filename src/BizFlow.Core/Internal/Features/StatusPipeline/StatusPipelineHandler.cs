@@ -48,7 +48,7 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
             var launchId = await _bizFlowJournal.GetLastLaunchId(command.Name);
             if (!string.IsNullOrEmpty(launchId))
             {
-                journalRecords = await _bizFlowJournal.GetJournalRecordByLaunchId(launchId);
+                journalRecords = await _storage.GetJournalRecordByLaunchIdAsync(launchId);
             }
             journalRecords ??= [];
             

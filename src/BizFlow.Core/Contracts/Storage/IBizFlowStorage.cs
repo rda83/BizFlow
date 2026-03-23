@@ -14,6 +14,8 @@ namespace BizFlow.Core.Contracts.Storage
         Task AddJournalRecordAsync(JournalRecord record, CancellationToken cancellationToken = default);
         Task<(IReadOnlyCollection<JournalRecord> Pipelines, long MaxId)> GetJournalRecordsAsync(long lastId, int limit = 100,
             CancellationToken cancellationToken = default);
+        Task<IReadOnlyCollection<JournalRecord>> GetJournalRecordByLaunchIdAsync(string launchId,
+            CancellationToken cancellationToken = default);
     }
 }
 

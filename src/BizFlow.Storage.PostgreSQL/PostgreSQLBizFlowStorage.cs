@@ -1,7 +1,6 @@
 ﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
-using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace BizFlow.Storage.PostgreSQL
@@ -144,6 +143,16 @@ namespace BizFlow.Storage.PostgreSQL
                 }
             }
             return (result.AsReadOnly(), maxId);
+        }
+
+        public async Task<IReadOnlyCollection<JournalRecord>> GetJournalRecordByLaunchIdAsync(string launchId, 
+            CancellationToken cancellationToken = default)
+        {
+            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+            var journalRecorEntities = await journalRecordRepository.GetByColumnAsync("launch_id", launchId, cancellationToken);
+
+            var result = journalRecorEntities.Select(i => i.ToCoreModel()).ToList();
+            return result.AsReadOnly();
         }
     }
 }
