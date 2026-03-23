@@ -1,12 +1,10 @@
-﻿using BizFlow.Core.Contracts;
-using BizFlow.Core.Contracts.Storage;
+﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 
 namespace BizFlow.Core.Internal.Features.StatusPipeline
 {
     public class StatusPipelineHandler : IStatusPipelineHandler
     {
-        private readonly IBizFlowJournal _bizFlowJournal;
         private readonly IBizFlowStorage _storage;
 
         private static readonly HashSet<TypeBizFlowJournalAction> _startStatuses = new()
@@ -25,9 +23,8 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
             TypeBizFlowJournalAction.Success
         };
 
-        public StatusPipelineHandler(IBizFlowJournal bizFlowJournal, IBizFlowStorage storage)
+        public StatusPipelineHandler(IBizFlowStorage storage)
         {
-            _bizFlowJournal = bizFlowJournal;
             _storage = storage;
         }
         public async Task<StatusPipelineResult> StatusPipeline(StatusPipelineCommand command,
@@ -45,7 +42,7 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
                 .ToList();
 
             IEnumerable<JournalRecord> journalRecords = [];
-            var launchId = await _bizFlowJournal.GetLastLaunchId(command.Name);
+            var launchId = await _storage.GetLastLaunchIdAsync(command.Name);
             if (!string.IsNullOrEmpty(launchId))
             {
                 journalRecords = await _storage.GetJournalRecordByLaunchIdAsync(launchId);

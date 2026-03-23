@@ -154,5 +154,19 @@ namespace BizFlow.Storage.PostgreSQL
             var result = journalRecorEntities.Select(i => i.ToCoreModel()).ToList();
             return result.AsReadOnly();
         }
+
+        public async Task<string?> GetLastLaunchIdAsync(string pipelineName, CancellationToken cancellationToken = default)
+        {
+            string? result = null;
+
+            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+            var journalRecorEntities = await journalRecordRepository.GetByColumnAsync("pipeline_name", pipelineName, cancellationToken);
+
+            var record = journalRecorEntities.OrderByDescending(i => i.Period).FirstOrDefault();
+
+            result = record?.LaunchId;
+
+            return result;
+        }
     }
 }

@@ -16,6 +16,7 @@ namespace BizFlow.Core.Contracts.Storage
             CancellationToken cancellationToken = default);
         Task<IReadOnlyCollection<JournalRecord>> GetJournalRecordByLaunchIdAsync(string launchId,
             CancellationToken cancellationToken = default);
+        Task<string?> GetLastLaunchIdAsync(string pipelineName, CancellationToken cancellationToken = default);
     }
 }
 
