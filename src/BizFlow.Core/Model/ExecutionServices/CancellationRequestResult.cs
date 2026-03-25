@@ -6,7 +6,7 @@
         public string Description { get; set; } = string.Empty;
         public long CancellationRequestId { get; set; }
 
-        internal static CancellationRequestResult? FromRequest(CancelPipelineRequest cancellationRequest)
+        internal static CancellationRequestResult? FromRequest(CancellationRequest cancellationRequest)
         {
             var result = new CancellationRequestResult()
             {

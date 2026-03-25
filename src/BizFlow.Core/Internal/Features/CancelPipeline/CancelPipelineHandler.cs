@@ -29,7 +29,7 @@ namespace BizFlow.Core.Internal.Features.CancelPipeline
                 return result;
             }
 
-            var addResult = await _cancelPipelineRequestService.AddAsync(new CancelPipelineRequest()
+            var addResult = await _cancelPipelineRequestService.AddAsync(new CancellationRequest()
             {
                 PipelineName = command.PipelineName,
                 ExpirationTime = command.ExpirationTime,

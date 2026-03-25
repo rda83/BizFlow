@@ -1,7 +1,7 @@
 ﻿
 namespace BizFlow.Core.Model
 {
-    public class CancelPipelineRequest
+    public class CancellationRequest
     {
         public long Id { get; set; }
         public string PipelineName { get; set; } = string.Empty;
