@@ -177,5 +177,25 @@ namespace BizFlow.Storage.PostgreSQL
             var addResult = await cancellationRequestRepository.AddAsync(requestEntity, cancellationToken);
             return addResult.Id;
         }
+
+        public async Task<CancellationRequest?> GetCancellationRequestAsync(long id, CancellationToken cancellationToken = default)
+        {
+            var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+            var entity = await cancellationRequestRepository.GetByUniqueColumnAsync("Id", id);
+
+            if (entity == null)
+            {
+                return null;
+            }
+
+            var result = entity.ToCoreModel();
+            return result;
+        }
+
+        public async Task UpdateCancellationRequestAsync(CancellationRequest cancellationRequest, CancellationToken cancellationToken = default)
+        {
+            var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+            await cancellationRequestRepository.UpdateAsync(new Entities.CancellationRequest(cancellationRequest));
+        }
     }
 }

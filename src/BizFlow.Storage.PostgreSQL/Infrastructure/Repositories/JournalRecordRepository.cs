@@ -29,6 +29,11 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             cmd.AddBooleanParameter("is_start_now", entity.IsStartNow);
         }
 
+        protected override void AddUpdateParameters(NpgsqlCommand cmd, JournalRecord entity)
+        {
+            throw new NotImplementedException();
+        }
+
         protected override (string columns, string values) BuildInsertParameters()
         {
             var parameters = new List<string>
@@ -50,6 +55,11 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             var values = string.Join(", ", parameters.Select(k => $"@{k}"));
 
             return (columns, values);
+        }
+
+        protected override string BuildUpdateParameters()
+        {
+            throw new NotImplementedException();
         }
 
         protected override JournalRecord MapToEntity(NpgsqlDataReader reader)

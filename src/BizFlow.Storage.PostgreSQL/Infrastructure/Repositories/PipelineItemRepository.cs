@@ -25,6 +25,11 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             cmd.Parameters.AddWithValue("options", entity.Options);
         }
 
+        protected override void AddUpdateParameters(NpgsqlCommand cmd, PipelineItem entity)
+        {
+            throw new NotImplementedException();
+        }
+
         protected override (string columns, string values) BuildInsertParameters()
         {
             var parameters = new List<string>
@@ -41,6 +46,11 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             var values = string.Join(", ", parameters.Select(k => $"@{k}"));
 
             return (columns, values);
+        }
+
+        protected override string BuildUpdateParameters()
+        {
+            throw new NotImplementedException();
         }
 
         protected override PipelineItem MapToEntity(NpgsqlDataReader reader)

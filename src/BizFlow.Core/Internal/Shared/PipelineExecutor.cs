@@ -161,7 +161,7 @@ namespace BizFlow.Core.Internal.Shared
         {
             if (cancellationRequestId > 0 && !closingByExpirationTimeOnly)
             {
-                await _cancelPipelineRequestService.SetExecutedAsync(cancellationRequestId);
+                //await _cancelPipelineRequestService.SetExecutedAsync(cancellationRequestId);
             }
         }
     }

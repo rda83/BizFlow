@@ -120,6 +120,24 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             return rowsAffected;
         }
 
+        public async Task<bool> UpdateAsync(TEntity entity, CancellationToken ct = default)
+        {
+            var updateParameters = BuildUpdateParameters();
+
+            var sql = $@"
+                UPDATE public.{TableName} 
+                SET {updateParameters} WHERE Id = @Id";
+
+            var connection = await _uow!.GetConnectionAsync();
+            await using var cmd = new NpgsqlCommand(sql, connection);
+            AddUpdateParameters(cmd, entity);
+
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+            await reader.ReadAsync(ct);
+
+            return reader.RecordsAffected > 0;
+        }
+
         protected async Task<TEntity> ExecuteWithConnectionAsync(
             Func<NpgsqlConnection, CancellationToken, Task<TEntity>> operation,
             CancellationToken ct = default)
@@ -131,5 +149,7 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
         protected abstract TEntity MapToEntity(NpgsqlDataReader reader);
         protected abstract (string columns, string values) BuildInsertParameters();
         protected abstract void AddInsertParameters(NpgsqlCommand cmd, TEntity entity);
+        protected abstract string BuildUpdateParameters();
+        protected abstract void AddUpdateParameters(NpgsqlCommand cmd, TEntity entity);
     }
 }

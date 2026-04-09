@@ -17,6 +17,7 @@ namespace BizFlow.Storage.PostgreSQL.Entities
 
         public CancellationRequest(Core.Model.CancellationRequest cancellationRequest) 
         {
+            Id = cancellationRequest.Id;
             PipelineName = cancellationRequest.PipelineName;
             ExpirationTime = cancellationRequest.ExpirationTime;
             Description = cancellationRequest.Description;
@@ -31,6 +32,7 @@ namespace BizFlow.Storage.PostgreSQL.Entities
         {
             var result = new Core.Model.CancellationRequest()
             {
+                Id = Id,
                 PipelineName = PipelineName,
                 ExpirationTime = ExpirationTime,
                 Description = Description,

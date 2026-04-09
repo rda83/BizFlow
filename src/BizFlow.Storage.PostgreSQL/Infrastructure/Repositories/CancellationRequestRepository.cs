@@ -25,24 +25,27 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             cmd.AddBooleanParameter("closed_after_expiration_date", entity.ClosedAfterExpirationDate);
         }
 
+        protected override void AddUpdateParameters(NpgsqlCommand cmd, CancellationRequest entity)
+        {
+            cmd.AddLongParameter("Id", entity.Id);
+            AddInsertParameters(cmd, entity);
+        }
+
         protected override (string columns, string values) BuildInsertParameters()
         {
-            var parameters = new List<string>
-            {
-                "pipeline_name",
-                "expiration_time",
-                "description",
-                "closing_by_expiration_time_only",
-                "created",
-                "executed",
-                "closing_time",
-                "closed_after_expiration_date",
-            };
+            List<string> parameters = GetFieldsName();
 
             var columns = string.Join(", ", parameters);
             var values = string.Join(", ", parameters.Select(k => $"@{k}"));
 
             return (columns, values);
+        }
+
+        protected override string BuildUpdateParameters()
+        {
+            List<string> parameters = GetFieldsName();
+            var result = string.Join(", ", parameters.Select(k => $"{k} = @{k}"));
+            return result;
         }
 
         protected override CancellationRequest MapToEntity(NpgsqlDataReader reader)
@@ -71,5 +74,21 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             };
             return result;
         }
+
+        private List<string> GetFieldsName()
+        {
+            return new List<string>
+            {
+                "pipeline_name",
+                "expiration_time",
+                "description",
+                "closing_by_expiration_time_only",
+                "created",
+                "executed",
+                "closing_time",
+                "closed_after_expiration_date",
+            };
+        }
+
     }
 }

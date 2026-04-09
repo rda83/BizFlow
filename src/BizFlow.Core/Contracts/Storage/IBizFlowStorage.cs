@@ -19,6 +19,9 @@ namespace BizFlow.Core.Contracts.Storage
         Task<string?> GetLastLaunchIdAsync(string pipelineName, CancellationToken cancellationToken = default);
 
         Task<long> AddCancellationRequestAsync(CancellationRequest request, CancellationToken cancellationToken = default);
+
+        Task<CancellationRequest?> GetCancellationRequestAsync(long id, CancellationToken cancellationToken = default);
+        Task UpdateCancellationRequestAsync(CancellationRequest cancellationRequest, CancellationToken cancellationToken = default);
     }
 }
 
