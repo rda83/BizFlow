@@ -161,6 +161,7 @@ namespace BizFlow.Core.Internal.Shared
         {
             if (cancellationRequestId > 0 && !closingByExpirationTimeOnly)
             {
+                throw new NotImplementedException(); //TODO
                 //await _storage.SetExecutedAsync(cancellationRequestId);
             }
         }
