@@ -1,6 +1,7 @@
 ﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
+using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace BizFlow.Storage.PostgreSQL
@@ -196,6 +197,47 @@ namespace BizFlow.Storage.PostgreSQL
         {
             var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
             await cancellationRequestRepository.UpdateAsync(new Entities.CancellationRequest(cancellationRequest));
+        }
+
+        public async Task<CancellationRequest?> GetActiveCancellationRequest(string pipelineName, CancellationToken cancellationToken = default)
+        {
+            var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+
+            var executedCondition = new FilterCondition()
+            {
+                Operator = FilterOperator.Eq,
+                Value = false,
+            };
+
+            var pipelineNameCondition = new FilterCondition()
+            {
+                Operator = FilterOperator.Eq,
+                Value = pipelineName,
+            };
+
+            var expirationTimeCondition = new FilterCondition()
+            {
+                Operator = FilterOperator.Gt,
+                Value = DateTime.Now,
+            };
+
+            var requestResult = await cancellationRequestRepository.GetPagedNewAsync(
+                new PagedQuery()
+                {
+                    Page = 1,
+                    PageSize = 1,
+                    Filters = new Dictionary<string, FilterCondition>()
+                    {
+                        { "executed", executedCondition },
+                        { "pipeline_name", pipelineNameCondition },
+                        { "expiration_time", expirationTimeCondition },
+                    },
+                    SortBy = new Dictionary<string, SortType>() { { "id", SortType.Asc } },
+                }, cancellationToken);
+
+            var result = requestResult.FirstOrDefault();
+
+            return result?.ToCoreModel();
         }
     }
 }

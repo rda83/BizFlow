@@ -54,7 +54,7 @@ namespace BizFlow.Core.Internal.Shared
                 return;
             }
 
-            var cancellationRequest = await _cancelPipelineRequestService.GetActiveRequest(pipelineName);
+            var cancellationRequest = await _storage.GetActiveCancellationRequest(pipelineName);
 
             if (cancellationRequest != null)
             {
@@ -161,7 +161,7 @@ namespace BizFlow.Core.Internal.Shared
         {
             if (cancellationRequestId > 0 && !closingByExpirationTimeOnly)
             {
-                //await _cancelPipelineRequestService.SetExecutedAsync(cancellationRequestId);
+                //await _storage.SetExecutedAsync(cancellationRequestId);
             }
         }
     }

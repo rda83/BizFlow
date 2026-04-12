@@ -2,8 +2,9 @@
 
 namespace BizFlow.Core.Contracts
 {
+    //TODO DEL
     public interface ICancelPipelineRequestService
     {
-        Task<CancellationRequest?> GetActiveRequest(string pipelineName, CancellationToken cancellationToken = default);
+        //Task<CancellationRequest?> GetActiveRequest(string pipelineName, CancellationToken cancellationToken = default);
     }
 }

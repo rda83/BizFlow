@@ -1,4 +1,4 @@
-﻿using BizFlow.Core.Contracts;
+﻿using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model.ExecutionServices;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,14 +17,13 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
             TimeSpan checkInterval)
         {
             using var scope = _scopeFactory.CreateScope();
-            var cancelService = scope.ServiceProvider.GetRequiredService<ICancelPipelineRequestService>();
+
+            var storage = scope.ServiceProvider.GetRequiredService<IBizFlowStorage>();
 
             while (!linkedCts.IsCancellationRequested)
             {
-                Console.WriteLine("MonitorCancellation");
-
                 await Task.Delay(checkInterval);
-                var cancellationRequest = await cancelService.GetActiveRequest(pipelineName);
+                var cancellationRequest = await storage.GetActiveCancellationRequest(pipelineName);
                 if (cancellationRequest != null)
                 {
                     linkedCts.Cancel();

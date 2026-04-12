@@ -22,6 +22,7 @@ namespace BizFlow.Core.Contracts.Storage
 
         Task<CancellationRequest?> GetCancellationRequestAsync(long id, CancellationToken cancellationToken = default);
         Task UpdateCancellationRequestAsync(CancellationRequest cancellationRequest, CancellationToken cancellationToken = default);
+        Task<CancellationRequest?> GetActiveCancellationRequest(string pipelineName, CancellationToken cancellationToken = default);
     }
 }
 
