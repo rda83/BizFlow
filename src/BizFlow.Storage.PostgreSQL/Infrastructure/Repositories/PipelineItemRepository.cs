@@ -1,6 +1,7 @@
 ﻿using BizFlow.Storage.PostgreSQL.Entities;
 using BizFlow.Storage.PostgreSQL.Helpers;
 using Npgsql;
+using System.Collections.Immutable;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
@@ -12,6 +13,10 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
         }
 
         protected override string TableName => "bf_pipeline_items";
+
+        protected override ImmutableHashSet<string> SortableСolumns => throw new NotImplementedException();
+
+        protected override ImmutableHashSet<string> FilterableСolumns => throw new NotImplementedException();
 
         protected override void AddInsertParameters(NpgsqlCommand cmd, PipelineItem entity)
         {

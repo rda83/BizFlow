@@ -1,4 +1,5 @@
 ﻿using Npgsql;
+using System.Collections.Immutable;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
@@ -7,6 +8,8 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
         private UnitOfWork? _uow;
 
         protected abstract string TableName { get; }
+        protected abstract ImmutableHashSet<string> SortableСolumns { get; }
+        protected abstract ImmutableHashSet<string> FilterableСolumns { get; }
 
         public BaseRepository() { }
 
@@ -151,5 +154,133 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
         protected abstract void AddInsertParameters(NpgsqlCommand cmd, TEntity entity);
         protected abstract string BuildUpdateParameters();
         protected abstract void AddUpdateParameters(NpgsqlCommand cmd, TEntity entity);
+
+
+        public async Task<IEnumerable<TEntity>> GetPagedNewAsync(PagedQuery pagedQuery, CancellationToken ct = default)
+        {
+            var query = BuildPagedQuery(pagedQuery);
+            
+            var connection = await _uow!.GetConnectionAsync();
+
+            await using var cmd = new NpgsqlCommand(query.Sql, connection);
+
+            foreach (var parameter in query.Parameters)
+            {
+                cmd.Parameters.Add(parameter);
+            }
+
+            await using var reader = await cmd.ExecuteReaderAsync(ct);
+
+            List<TEntity> result = [];
+
+            while (await reader.ReadAsync(ct))
+            {
+                if (!reader.HasRows) { continue; }
+                result.Add(MapToEntity(reader));
+            }
+            return result;
+        }
+
+        private (string Sql, List<NpgsqlParameter> Parameters) BuildPagedQuery(PagedQuery pagedQuery)
+        {
+            var parameters = new List<NpgsqlParameter>();
+            var whereClauses = new List<string>();
+            var paramIndex = 0;
+
+            foreach (var item in pagedQuery.Filters)
+            {
+                if(!FilterableСolumns.Contains(item.Key))
+                {
+                    throw new NotSupportedException($"Field {item.Key} cannot be used in filter conditions." +
+                        $"Supported fields: {string.Join(", ", FilterableСolumns)}");
+                }
+
+                var paramName = $"@p{paramIndex}";
+
+                string condition = string.Empty;
+                switch (item.Value.Operator)
+                {
+                    case FilterOperator.Eq:
+                        condition = $"{item.Key} = {paramName}";
+                        break;
+                    case FilterOperator.Contains:
+                        condition = $"{item.Key} ILIKE '%' || {paramName} || '%'";
+                        break;
+                    case FilterOperator.Gt:
+                        condition = $"{item.Key} > {paramName}";
+                        break;
+                    case FilterOperator.Lt:
+                        condition = $"{item.Key} < {paramName}";
+                        break;
+                    case FilterOperator.Startswith:
+                        condition = $"{item.Key} ILIKE {paramName} || '%'";
+                        break;
+                    default:
+                        throw new NotSupportedException($"Operator {item.Value.Operator} is not supported");
+                }
+
+                whereClauses.Add(condition);
+                parameters.Add(new NpgsqlParameter(paramName, item.Value.Value));
+                paramIndex++;
+            }
+
+            var orderByClauses = new List<string>();
+            foreach (var item in pagedQuery.SortBy)
+            {
+                if (!SortableСolumns.Contains(item.Key))
+                {
+                    throw new NotSupportedException($"Field {item.Key} cannot be used for sorting." +
+                        $"Supported fields: {string.Join(", ", SortableСolumns)}");
+                }
+
+
+                var direction = item.Value == SortType.Asc ? "ASC" : "DESC";
+                orderByClauses.Add($"{item.Key} {direction} NULLS LAST");
+
+            }
+
+            var whereSql = whereClauses.Any() ? "WHERE " + string.Join(" AND ", whereClauses) : "";            
+            var orderSql = orderByClauses.Any() ? "ORDER BY " + string.Join(", ", orderByClauses) : "";
+
+            var sql = $@"
+                SELECT * 
+                FROM public.{TableName}
+                {whereSql}
+                {orderSql}
+                OFFSET {(pagedQuery.Page - 1) * pagedQuery.PageSize} ROWS
+                FETCH NEXT {pagedQuery.PageSize} ROWS ONLY;";
+
+            return (sql, parameters);
+        }
+    }
+
+    public class PagedQuery
+    {
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 20;
+
+        public Dictionary<string, FilterCondition> Filters { get; set; } = [];
+        public Dictionary<string, SortType> SortBy { get; set; } = [];
+    }
+
+    public class FilterCondition
+    {
+        public FilterOperator Operator { get; set; }
+        public object? Value { get; set; }
+    }
+
+    public enum FilterOperator
+    {
+        Eq,
+        Contains,
+        Gt,
+        Lt,
+        Startswith,
+    }
+
+    public enum SortType
+    {
+        Asc,
+        Desc,
     }
 }
