@@ -14,4 +14,10 @@
     <ProjectReference Include="..\BizFlow.Core\BizFlow.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="v1_initial_schema.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

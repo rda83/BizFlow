@@ -8,10 +8,9 @@ namespace BizFlow.Storage.PostgreSQL
 {
     public static class ServiceRegistration
     {
-        public static void AddPostgreSQLBizFlowStorage(this IServiceCollection services)
+        public static void AddPostgreSQLBizFlowStorage(this IServiceCollection services, string connectionString)
         {
-
-            services.AddSingleton(sp => new ConnectionFactory("Host=localhost;Port=5432;Database=dev-biz-flow;Username=client-biz-flow;Password=mysecretpassword"));
+            services.AddSingleton(sp => new ConnectionFactory(connectionString));
 
             services.AddScoped<IRepository<Pipeline>, PipelineRepository>();
             services.AddScoped<IRepository<PipelineItem>, PipelineItemRepository>();
