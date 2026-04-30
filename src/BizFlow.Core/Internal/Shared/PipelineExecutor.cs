@@ -1,6 +1,7 @@
 ﻿
 using BizFlow.Core.Contracts;
 using BizFlow.Core.Contracts.Storage;
+using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Shared.ExecutionServices;
 using BizFlow.Core.Model;
 using BizFlow.Core.Model.ExecutionServices;
@@ -15,17 +16,20 @@ namespace BizFlow.Core.Internal.Shared
         private readonly PipelineExecutorJournal _journal;
         private readonly CancellationMonitorService _cancellationMonitor;
         private readonly IBizFlowStorage _storage;
+        private readonly ICancelPipelineHandler _cancelPipelineHandler;
 
         public PipelineExecutor(
             IBizFlowStorage storage,
             IServiceScopeFactory scopeFactory,
             PipelineExecutorJournal journal,
-            CancellationMonitorService cancellationMonitor)
+            CancellationMonitorService cancellationMonitor,
+            ICancelPipelineHandler cancelPipelineHandler)
         {
             _storage = storage;
             _scopeFactory = scopeFactory;
             _journal = journal;
             _cancellationMonitor = cancellationMonitor;
+            _cancelPipelineHandler = cancelPipelineHandler;
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -71,6 +75,7 @@ namespace BizFlow.Core.Internal.Shared
                     };
                     await _journal.AddCanceled(cancelOperationArgs);
                 }
+
                 await CancellationRequestSetExecuted(cancellationRequest.Id,
                     cancellationRequest.ClosingByExpirationTimeOnly);
 
@@ -154,12 +159,16 @@ namespace BizFlow.Core.Internal.Shared
                 }           
             }
         }
+        
         private async Task CancellationRequestSetExecuted(long cancellationRequestId, bool closingByExpirationTimeOnly)
         {
             if (cancellationRequestId > 0 && !closingByExpirationTimeOnly)
             {
-                throw new NotImplementedException(); //TODO
-                //await _storage.SetExecutedAsync(cancellationRequestId);
+                await _cancelPipelineHandler.CloseCancellationRequest(new CloseCancelPipelineCommand()
+                {
+                    CancelPipeRequestId = cancellationRequestId,
+                    Message = string.Empty,
+                });
             }
         }
     }
