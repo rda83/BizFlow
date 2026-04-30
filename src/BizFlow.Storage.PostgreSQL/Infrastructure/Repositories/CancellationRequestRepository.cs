@@ -14,9 +14,9 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 
         protected override string TableName => "bf_cancellation_requests";
 
-        protected override ImmutableHashSet<string> SortableСolumns => throw new NotImplementedException();
+        protected override ImmutableHashSet<string> SortableСolumns => ["id"];
 
-        protected override ImmutableHashSet<string> FilterableСolumns => throw new NotImplementedException();
+        protected override ImmutableHashSet<string> FilterableСolumns => ["id", "executed", "pipeline_name", "expiration_time"];
 
         protected override void AddInsertParameters(NpgsqlCommand cmd, CancellationRequest entity)
         {

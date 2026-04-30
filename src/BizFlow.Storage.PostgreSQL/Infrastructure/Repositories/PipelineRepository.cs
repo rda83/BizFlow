@@ -15,9 +15,9 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 
         protected override string TableName => "bf_pipelines";
 
-        protected override ImmutableHashSet<string> SortableСolumns => throw new NotImplementedException();
+        protected override ImmutableHashSet<string> SortableСolumns => ["id"];
 
-        protected override ImmutableHashSet<string> FilterableСolumns => throw new NotImplementedException();
+        protected override ImmutableHashSet<string> FilterableСolumns => ["id"];
 
         protected override void AddInsertParameters(NpgsqlCommand cmd, Pipeline entity)
         {

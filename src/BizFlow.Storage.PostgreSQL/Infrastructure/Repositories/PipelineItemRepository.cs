@@ -2,6 +2,7 @@
 using BizFlow.Storage.PostgreSQL.Helpers;
 using Npgsql;
 using System.Collections.Immutable;
+using System.Text.Json;
 
 namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 {
@@ -14,9 +15,9 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
 
         protected override string TableName => "bf_pipeline_items";
 
-        protected override ImmutableHashSet<string> SortableСolumns => throw new NotImplementedException();
+        protected override ImmutableHashSet<string> SortableСolumns => ["id"];
 
-        protected override ImmutableHashSet<string> FilterableСolumns => throw new NotImplementedException();
+        protected override ImmutableHashSet<string> FilterableСolumns => ["id"];
 
         protected override void AddInsertParameters(NpgsqlCommand cmd, PipelineItem entity)
         {
@@ -66,7 +67,12 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             var sortOrder = reader.GetInt32(reader.GetOrdinal("sort_order"));
             var description = reader.GetStringOrNull("description");
             var blocked = reader.GetBoolean(reader.GetOrdinal("blocked"));
-            var options = reader.GetStringOrNull("options");
+
+            var optionsOrdinal = reader.GetOrdinal("options");
+            var options = reader.IsDBNull(optionsOrdinal)
+                ? default(JsonElement)
+                : reader.GetFieldValue<JsonElement>(optionsOrdinal);
+
             var createdAt = reader.GetDateTime(reader.GetOrdinal("created_at"));
             var updatedAt = reader.GetDateTime(reader.GetOrdinal("updated_at"));
 
@@ -78,7 +84,7 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
                 SortOrder = sortOrder,
                 Description = description,
                 Blocked = blocked,
-                //Options = options,
+                Options = options,
                 CreatedAt = createdAt,
                 UpdatedAt = updatedAt,
             };

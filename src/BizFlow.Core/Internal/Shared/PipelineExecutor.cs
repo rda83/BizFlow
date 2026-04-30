@@ -13,21 +13,18 @@ namespace BizFlow.Core.Internal.Shared
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly PipelineExecutorJournal _journal;
-        private readonly ICancelPipelineRequestService _cancelPipelineRequestService;
         private readonly CancellationMonitorService _cancellationMonitor;
         private readonly IBizFlowStorage _storage;
 
         public PipelineExecutor(
             IBizFlowStorage storage,
             IServiceScopeFactory scopeFactory,
-            PipelineExecutorJournal journal, ICancelPipelineRequestService cancelPipelineRequestService,
+            PipelineExecutorJournal journal,
             CancellationMonitorService cancellationMonitor)
         {
             _storage = storage;
             _scopeFactory = scopeFactory;
             _journal = journal;
-            _cancelPipelineRequestService = cancelPipelineRequestService;
-
             _cancellationMonitor = cancellationMonitor;
         }
 
