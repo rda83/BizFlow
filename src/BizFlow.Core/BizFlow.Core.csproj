@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
 	  
 	<PackageId>BizFlow</PackageId>
-	<Version>1.0.1-beta</Version>
+	<Version>1.0.2-beta</Version>
 	<Authors>Denis R. (RDA83)</Authors>
 	<Description>Task pipeline management system for .NET</Description>
 
