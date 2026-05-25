@@ -1,4 +1,5 @@
-﻿using BizFlow.Core.Contracts;
+﻿using BizFlow.Abstractions;
+using BizFlow.Core.Contracts;
 using BizFlow.Core.Controllers;
 using BizFlow.Core.Internal.Features.AddPipeline;
 using BizFlow.Core.Internal.Features.CancelPipeline;
@@ -22,7 +23,6 @@ namespace BizFlow.Core.Services.DI
         public static void AddBizFlow(this IServiceCollection services,
             params Assembly[] assemblies)
         {
-
             #region Workers
 
 
