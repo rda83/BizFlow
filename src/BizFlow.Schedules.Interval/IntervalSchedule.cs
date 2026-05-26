@@ -9,15 +9,16 @@ namespace BizFlow.Schedules.Interval
         public IntervalSchedule(TimeSpan interval)
         {
             if (interval <= TimeSpan.Zero)
+            {
                 throw new ArgumentException("The interval must be positive.", nameof(interval));
+            }
+
             Interval = interval;
         }
 
-        public DateTimeOffset? GetNextRun(DateTimeOffset? lastRun)
+        public DateTimeOffset? GetNextRun(DateTimeOffset? lastRun, DateTimeOffset now)
         {
-            return lastRun == null
-                ? DateTimeOffset.UtcNow         // TODO Абстракция времени
-                : lastRun.Value.Add(Interval);
+            return lastRun == null ? now : lastRun.Value.Add(Interval);
         }
     }
 }

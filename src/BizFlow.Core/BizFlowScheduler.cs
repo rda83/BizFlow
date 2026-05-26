@@ -7,6 +7,7 @@ namespace BizFlow.Core
 {
     public class BizFlowScheduler : BackgroundService
     {
+        private readonly ITimeProvider _timeProvider;
         private readonly IEnumerable<JobDefinition> _jobDefinitions;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BizFlowScheduler> _logger;
@@ -17,8 +18,10 @@ namespace BizFlow.Core
 
         public BizFlowScheduler(IEnumerable<JobDefinition> jobDefinitions,
             IServiceScopeFactory scopeFactory,
-            ILogger<BizFlowScheduler> logger)
+            ILogger<BizFlowScheduler> logger,
+            ITimeProvider timeProvider)
         {
+            _timeProvider = timeProvider;
             _jobDefinitions = jobDefinitions;
             _scopeFactory = scopeFactory;
             _logger = logger;
@@ -27,29 +30,29 @@ namespace BizFlow.Core
             {
                 _lastRunTimes[def] = null;
                 _runningStates[def] = false;
-            }
+            }            
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Планировщик запущен. Зарегистрировано задач: {Count}", _jobDefinitions.Count()); // TODO перевод сообщения
+            _logger.LogInformation("Scheduler started. Tasks registered: {Count}.", _jobDefinitions.Count());
+            
 
             while (!stoppingToken.IsCancellationRequested)
             {
-                
-
+                var now = _timeProvider.UtcNow;
                 foreach (var jobDef in _jobDefinitions)
                 {
                     if (stoppingToken.IsCancellationRequested) break;
-
-                    var nextRun = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef]);
-                    var now = DateTimeOffset.UtcNow;
+               
+                    var nextRun = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef], now);
+                   
                     if (nextRun.HasValue && nextRun.Value <= now)
                     {
                         _lastRunTimes[jobDef] = now;
                         if (_runningStates[jobDef])
                         {
-                            _logger.LogWarning("Задача '{JobName}' ещё выполняется – запуск пропущен", jobDef.Name); // TODO перевод сообщения
+                            _logger.LogWarning("Task '{JobName}' is still running – execution skipped.", jobDef.Name);
                             continue;
                         }
 
@@ -62,7 +65,7 @@ namespace BizFlow.Core
                 // TODO Интервал опроса. В продакшене лучше вычислять время до ближайшего события.
                 await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
             }
-            _logger.LogInformation("Планировщик остановлен");
+            _logger.LogInformation("Scheduler stopped.");
         }
 
         private async Task ExecuteJobAsync(JobDefinition jobDef, CancellationToken appStoppingToken)
@@ -72,15 +75,15 @@ namespace BizFlow.Core
 
             try
             {
-                _logger.LogInformation("Задача '{JobName}' начала выполнение", jobDef.Name); // TODO перевод сообщения
+                _logger.LogInformation("Task '{JobName}' started execution.", jobDef.Name);
 
                 await jobDef.Worker.ExecuteAsync(appStoppingToken);
 
-                _logger.LogInformation("Задача '{JobName}' успешно завершена", jobDef.Name); // TODO перевод сообщения
+                _logger.LogInformation("Task '{JobName}' completed successfully.", jobDef.Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Задача '{JobName}' завершилась с ошибкой", jobDef.Name); // TODO перевод сообщения
+                _logger.LogError(ex, "Task '{JobName}' failed with an error.", jobDef.Name);
             }
             finally
             {

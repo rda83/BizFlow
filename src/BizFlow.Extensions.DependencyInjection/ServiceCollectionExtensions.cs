@@ -6,8 +6,14 @@ namespace BizFlow.Extensions.DependencyInjection
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddBizFlowScheduler(this IServiceCollection services)
+        public static IServiceCollection AddBizFlowScheduler(this IServiceCollection services,
+            Action<BizFlowSchedulerOptions>? configure = null)
         {
+            var options = new BizFlowSchedulerOptions();
+            configure?.Invoke(options);
+
+            services.AddSingleton<ITimeProvider>(options.TimeProvider ?? new SystemTimeProvider());
+
             services.AddHostedService<BizFlowScheduler>();
             return services;
         }
