@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 18
-VisualStudioVersion = 18.6.11806.211
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37012.4 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
@@ -14,6 +14,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BizFlow.Schedules.Interval", "src\BizFlow.Schedules.Interval\BizFlow.Schedules.Interval.csproj", "{F3C34DBA-B7C4-4277-8276-D381D622CCDB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BizFlow.Extensions.DependencyInjection", "src\BizFlow.Extensions.DependencyInjection\BizFlow.Extensions.DependencyInjection.csproj", "{5BBC6802-A9AD-4F5E-A753-984DE389823A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C66EF3C2-4357-471F-A4A9-18A817352BB7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BizFlow.Schedules.Interval.Tests", "tests\BizFlow.Schedules.Interval.Tests\BizFlow.Schedules.Interval.Tests.csproj", "{74C8B064-EE08-438F-AB6F-F0A1F8238605}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BizFlow.Core.Tests", "tests\BizFlow.Core.Tests\BizFlow.Core.Tests.csproj", "{3326B4CF-4C5C-40D6-A47F-9D1A3A78C86D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +47,14 @@ Global
 		{5BBC6802-A9AD-4F5E-A753-984DE389823A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5BBC6802-A9AD-4F5E-A753-984DE389823A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BBC6802-A9AD-4F5E-A753-984DE389823A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74C8B064-EE08-438F-AB6F-F0A1F8238605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74C8B064-EE08-438F-AB6F-F0A1F8238605}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74C8B064-EE08-438F-AB6F-F0A1F8238605}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74C8B064-EE08-438F-AB6F-F0A1F8238605}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3326B4CF-4C5C-40D6-A47F-9D1A3A78C86D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3326B4CF-4C5C-40D6-A47F-9D1A3A78C86D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3326B4CF-4C5C-40D6-A47F-9D1A3A78C86D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3326B4CF-4C5C-40D6-A47F-9D1A3A78C86D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -51,6 +65,8 @@ Global
 		{5FEFCA49-FA62-4E24-B6C6-ED8A233B73E8} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{F3C34DBA-B7C4-4277-8276-D381D622CCDB} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{5BBC6802-A9AD-4F5E-A753-984DE389823A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{74C8B064-EE08-438F-AB6F-F0A1F8238605} = {C66EF3C2-4357-471F-A4A9-18A817352BB7}
+		{3326B4CF-4C5C-40D6-A47F-9D1A3A78C86D} = {C66EF3C2-4357-471F-A4A9-18A817352BB7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B945D3E7-5995-4CD4-B001-00AC4B6DB5A6}
