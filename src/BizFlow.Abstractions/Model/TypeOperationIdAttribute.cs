@@ -1,4 +1,4 @@
-﻿namespace BizFlow.Core.Model
+﻿namespace BizFlow.Abstractions.Model
 {
     public class TypeOperationIdAttribute : Attribute
     {

@@ -1,4 +1,5 @@
 ﻿using BizFlow.Abstractions;
+using BizFlow.Abstractions.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,9 @@ namespace BizFlow.Core
         private readonly ILogger<BizFlowScheduler> _logger;
 
         private readonly ConcurrentDictionary<string, JobDefinition> _jobDefinitions = new();
+        //IBizFlowPipelineService
+
+
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _lastRunTimes = new();
         private readonly ConcurrentDictionary<string, bool> _runningStates = new();
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _nextRunTimes = new();
@@ -41,6 +45,12 @@ namespace BizFlow.Core
                 var nextRun = jobDef.Schedule.GetNextRun(null, now);
                 _nextRunTimes[jobDef.Name] = nextRun;
             }
+
+            // - регистрация пайплайнов из хранилища, раньше раньше в инфраструктуре Quartz
+            //     bizFlowJobManager.CrerateTrigger, теперь ??? видимо коллекция JobDefinition
+
+            // - нужен отдельный сервис синглтон - хранилище пайплайнов BizFlowPipelineService
+
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -137,7 +147,7 @@ namespace BizFlow.Core
 
                 // Возможно необходим таймаут выполнения, например как параметр.
 
-                await jobDef.Worker.ExecuteAsync(appStoppingToken);
+                await jobDef.Worker.ExecuteAsync(null, appStoppingToken);
 
                 _logger.LogInformation("Task '{JobName}' completed successfully.", jobDef.Name);
             }

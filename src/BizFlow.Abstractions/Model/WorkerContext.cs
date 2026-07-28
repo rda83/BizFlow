@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace BizFlow.Core.Model
+namespace BizFlow.Abstractions.Model
 {
     public class WorkerContext
     {

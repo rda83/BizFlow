@@ -26,32 +26,32 @@ namespace BizFlow.Core.Services.DI
             #region Workers
 
 
-            var interfaceType = typeof(IBizFlowWorker);
-            foreach (var _assembly in assemblies)
-            {
-                var types = _assembly.GetTypes()
-                    .Where(t => t.IsClass
-                        && t.IsPublic
-                        && !t.IsAbstract
-                        && interfaceType.IsAssignableFrom(t));
+            //var interfaceType = typeof(IBizFlowWorker);
+            //foreach (var _assembly in assemblies)
+            //{
+            //    var types = _assembly.GetTypes()
+            //        .Where(t => t.IsClass
+            //            && t.IsPublic
+            //            && !t.IsAbstract
+            //            && interfaceType.IsAssignableFrom(t));
 
-                foreach (var _type in types)
-                {
-                    var columnAttribute = (TypeOperationIdAttribute?)Attribute.GetCustomAttribute(
-                        _type, typeof(TypeOperationIdAttribute));
+            //    foreach (var _type in types)
+            //    {
+            //        var columnAttribute = (TypeOperationIdAttribute?)Attribute.GetCustomAttribute(
+            //            _type, typeof(TypeOperationIdAttribute));
 
 
-                    if (columnAttribute != null && 
-                        !string.IsNullOrWhiteSpace(columnAttribute.TypeOperationId)) //TODO Необходима валидация TypeOperationId
-                    {
-                        services.AddKeyedScoped(typeof(IBizFlowWorker), columnAttribute.TypeOperationId, _type);
-                    }
-                    else
-                    {
-                        //TODO Информировать
-                    }
-                }
-            }
+            //        if (columnAttribute != null && 
+            //            !string.IsNullOrWhiteSpace(columnAttribute.TypeOperationId)) //TODO Необходима валидация TypeOperationId
+            //        {
+            //            services.AddKeyedScoped(typeof(IBizFlowWorker), columnAttribute.TypeOperationId, _type);
+            //        }
+            //        else
+            //        {
+            //            //TODO Информировать
+            //        }
+            //    }
+            //}
             #endregion
 
             services.AddQuartz(q => {

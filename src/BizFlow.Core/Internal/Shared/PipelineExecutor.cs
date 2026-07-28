@@ -120,19 +120,19 @@ namespace BizFlow.Core.Internal.Shared
                     {
                         using (var scope = _scopeFactory.CreateScope())
                         {
-                            IBizFlowWorker worker = scope.ServiceProvider
-                                .GetRequiredKeyedService<IBizFlowWorker>(pipelineItem.TypeOperationId);
+                            DEL_IBizFlowWorker worker = scope.ServiceProvider
+                                .GetRequiredKeyedService<DEL_IBizFlowWorker>(pipelineItem.TypeOperationId);
 
-                            var workerContext = new WorkerContext();
-                            workerContext.LaunchId = launchId;
-                            workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
-                            workerContext.PipelineName = pipeline.Name;
-                            workerContext.CronExpression = pipeline.CronExpression;
-                            workerContext.CancellationToken = cancellationToken;
-                            workerContext.Options = pipelineItem.Options;
-                            workerContext.IsStartNowPipeline = isStartNowPipeline;
+                            //var workerContext = new WorkerContext();
+                            //workerContext.LaunchId = launchId;
+                            //workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
+                            //workerContext.PipelineName = pipeline.Name;
+                            //workerContext.CronExpression = pipeline.CronExpression;
+                            //workerContext.CancellationToken = cancellationToken;
+                            //workerContext.Options = pipelineItem.Options;
+                            //workerContext.IsStartNowPipeline = isStartNowPipeline;
 
-                            await worker.Run(workerContext);
+                            //await worker.Run(workerContext);
                         }
                         await _journal.AddSuccess(launchId, isStartNowPipeline, pipeline, pipelineItem);
                     }

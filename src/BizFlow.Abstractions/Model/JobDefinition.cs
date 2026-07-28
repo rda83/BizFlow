@@ -1,5 +1,4 @@
-﻿
-namespace BizFlow.Abstractions
+﻿namespace BizFlow.Abstractions.Model
 {
     public class JobDefinition
     {
