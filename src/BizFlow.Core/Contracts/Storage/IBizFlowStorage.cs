@@ -1,4 +1,5 @@
-﻿using BizFlow.Core.Model;
+﻿using BizFlow.Abstractions.Model;
+using BizFlow.Core.Model;
 
 namespace BizFlow.Core.Contracts.Storage
 {

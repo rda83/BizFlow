@@ -15,7 +15,7 @@ namespace BizFlow.Storage.PostgreSQL.Entities
         public DateTime UpdatedAt { get; set; }
         public PipelineItem() { }
 
-        public PipelineItem(long pipelineId, Core.Model.PipelineItem pipelineItemDto)
+        public PipelineItem(long pipelineId, Abstractions.Model.PipelineItem pipelineItemDto)
         {
             PipelineId = pipelineId;
 
@@ -27,9 +27,9 @@ namespace BizFlow.Storage.PostgreSQL.Entities
             Options = pipelineItemDto.Options;
         }
 
-        public Core.Model.PipelineItem ToCoreModel()
+        public Abstractions.Model.PipelineItem ToCoreModel()
         {
-            var result = new Core.Model.PipelineItem()
+            var result = new Abstractions.Model.PipelineItem()
             {
                 Id = Id,
                 TypeOperationId = TypeOperationId,

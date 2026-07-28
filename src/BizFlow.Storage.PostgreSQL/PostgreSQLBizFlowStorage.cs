@@ -1,4 +1,5 @@
-﻿using BizFlow.Core.Contracts.Storage;
+﻿using BizFlow.Abstractions.Model;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
 using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;

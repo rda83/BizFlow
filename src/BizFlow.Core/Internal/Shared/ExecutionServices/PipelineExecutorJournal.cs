@@ -1,4 +1,5 @@
 ﻿
+using BizFlow.Abstractions.Model;
 using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 using BizFlow.Core.Model.ExecutionServices;

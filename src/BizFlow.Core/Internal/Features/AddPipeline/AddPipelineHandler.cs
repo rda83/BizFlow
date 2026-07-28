@@ -1,4 +1,5 @@
-﻿using BizFlow.Core.Contracts;
+﻿using BizFlow.Abstractions.Model;
+using BizFlow.Core.Contracts;
 using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;

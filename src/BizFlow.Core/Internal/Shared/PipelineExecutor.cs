@@ -1,9 +1,9 @@
 ﻿
+using BizFlow.Abstractions.Model;
 using BizFlow.Core.Contracts;
 using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Shared.ExecutionServices;
-using BizFlow.Core.Model;
 using BizFlow.Core.Model.ExecutionServices;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
