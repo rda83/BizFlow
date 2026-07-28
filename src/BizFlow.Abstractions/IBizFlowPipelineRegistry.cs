@@ -14,7 +14,7 @@ namespace BizFlow.Abstractions
         bool Remove(string pipelineName);
         bool Exist(string pipelineName);
 
-        event EventHandler<PipelineDefinition>? PipelineAdded;
-        event EventHandler<string>? PipelineRemoved;
+        event EventHandler<PipelineDefinition>? OnAdded;
+        event EventHandler<string>? OnRemoved;
     }
 }

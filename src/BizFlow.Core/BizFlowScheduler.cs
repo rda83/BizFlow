@@ -11,64 +11,76 @@ namespace BizFlow.Core
     {
         private const int DEFAULT_DELAY_INTERVAL_SECONDS = 1;
 
+        // FOR DEBUG
+        private bool tik = true;
+
         private readonly ITimeProvider _timeProvider;
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IBizFlowPipelineRegistry _pipelineRegistry;
         private readonly ILogger<BizFlowScheduler> _logger;
-
-        // private readonly ConcurrentDictionary<string, PipelineDefinition> _jobDefinitions = new();
-        //IBizFlowPipelineService
-
 
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _lastRunTimes = new();
         private readonly ConcurrentDictionary<string, bool> _runningStates = new();
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _nextRunTimes = new();
         
-        public BizFlowScheduler(IEnumerable<PipelineDefinition> jobDefinitions,
+        public BizFlowScheduler(
+            IBizFlowPipelineRegistry pipelineRegistry,
             IServiceScopeFactory scopeFactory,
             ILogger<BizFlowScheduler> logger,
             ITimeProvider timeProvider)
         {
+            _pipelineRegistry = pipelineRegistry;
             _timeProvider = timeProvider;
             _scopeFactory = scopeFactory;
             _logger = logger;
 
-            var now = _timeProvider.UtcNow;
-
-            //TODO: будет необходима возможность динамического добавления/удаления задачи.
-
-            foreach (var jobDef in jobDefinitions)
-            {
-                _runningStates[jobDef.Name] = false;
-                _jobDefinitions[jobDef.Name] = jobDef;
-                _lastRunTimes[jobDef.Name] = null;
-
-                var nextRun = jobDef.Schedule.GetNextRun(null, now);
-                _nextRunTimes[jobDef.Name] = nextRun;
-            }
-
-            // - регистрация пайплайнов из хранилища, раньше раньше в инфраструктуре Quartz
-            //     bizFlowJobManager.CrerateTrigger, теперь ??? видимо коллекция JobDefinition
-
-            // - нужен отдельный сервис синглтон - хранилище пайплайнов BizFlowPipelineService
-
+            _pipelineRegistry.OnAdded += OnJobAdded;
+            _pipelineRegistry.OnRemoved += OnJobRemoved;
         }
+
+        private void OnJobAdded(object? sender, PipelineDefinition pipelineDef)
+        {
+            _lastRunTimes.TryAdd(pipelineDef.Name, null);
+            _runningStates.TryAdd(pipelineDef.Name, false);
+
+            var now = _timeProvider.UtcNow;
+            var nextRun = pipelineDef.Schedule.GetNextRun(null, now);
+            
+            // Возможно необходим пересчет следующего запуска
+            //_logger.LogInformation("");
+        }
+
+        private void OnJobRemoved(object? sender, string pipelineName)
+        {
+            _lastRunTimes.TryRemove(pipelineName, out _);
+            _runningStates.TryRemove(pipelineName, out _);
+            // (?) _nextRunTimes
+            //_logger.LogInformation("");
+        }
+
+
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Scheduler started. Tasks registered: {Count}.", _jobDefinitions.Count());
-            
+            //_logger.LogInformation("Scheduler started. Tasks registered: {Count}.", _jobDefinitions.Count());
+
+            _logger.LogInformation("Scheduler started.");
+
             //TODO: можно явно завернуть цикл в try-catch (OperationCanceledException)
             // и залогировать «Scheduler stopped by cancellation».
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                _logger.LogInformation(tik ? "tik" : "tak");
+                tik = !tik;
+
                 var now = _timeProvider.UtcNow;
                 
-                foreach (var jobDef in _jobDefinitions.Values)
+                foreach (var jobDef in _pipelineRegistry.GetAll())
                 {
                     if (stoppingToken.IsCancellationRequested) break;
 
-                    if (_nextRunTimes[jobDef.Name] == null)
+                    if (_nextRunTimes[jobDef.Name] == null) // TODO: проверить существует ли ключ
                     {
                         _nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
                     }
@@ -76,7 +88,7 @@ namespace BizFlow.Core
 
                     if (nextRun.HasValue && nextRun.Value <= now)
                     {
-                        if (_runningStates[jobDef.Name])
+                        if (_runningStates[jobDef.Name]) // TODO: проверить существует ли ключ
                         {
                             _logger.LogWarning("Task '{JobName}' is still running – execution skipped.", jobDef.Name);
                             continue;
@@ -147,7 +159,7 @@ namespace BizFlow.Core
 
                 // Возможно необходим таймаут выполнения, например как параметр.
 
-                await jobDef.Worker.ExecuteAsync(null, appStoppingToken);
+                //await jobDef.Worker.ExecuteAsync(null, appStoppingToken);
 
                 _logger.LogInformation("Task '{JobName}' completed successfully.", jobDef.Name);
             }
@@ -157,6 +169,7 @@ namespace BizFlow.Core
             }
             finally
             {
+                // TODO: Если пока выполнялась задача - она была удалена
                 _runningStates[jobDef.Name] = false;
             }
         }

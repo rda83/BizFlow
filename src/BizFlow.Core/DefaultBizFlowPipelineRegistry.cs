@@ -8,8 +8,8 @@ namespace BizFlow.Core
     {
         private readonly ConcurrentDictionary<string, PipelineDefinition> _pipelineDefinitions = new();
 
-        public event EventHandler<PipelineDefinition>? PipelineAdded;
-        public event EventHandler<string>? PipelineRemoved;
+        public event EventHandler<PipelineDefinition>? OnAdded;
+        public event EventHandler<string>? OnRemoved;
 
         public IReadOnlyList<PipelineDefinition> GetAll()
         {
@@ -31,7 +31,7 @@ namespace BizFlow.Core
                 throw new InvalidOperationException($"Pipeline '{pipeline.Name}' already exists.");
             }
 
-            PipelineAdded?.Invoke(this, pipeline);
+            OnAdded?.Invoke(this, pipeline);
         }
 
         public bool Remove(string pipelineName)
@@ -44,7 +44,7 @@ namespace BizFlow.Core
             var removed = _pipelineDefinitions.TryRemove(pipelineName, out  var _);
             if (removed)
             {
-                PipelineRemoved?.Invoke(this, pipelineName);
+                OnRemoved?.Invoke(this, pipelineName);
             }          
             return removed;
         }

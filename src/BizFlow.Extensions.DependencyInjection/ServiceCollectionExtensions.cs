@@ -59,22 +59,22 @@ namespace BizFlow.Extensions.DependencyInjection
 
             
 
-            services.AddHostedService<BizFlowScheduler>(); // Использует коллекцию JobDefinition через DI
+            services.AddHostedService<BizFlowScheduler>();
             return services;
         }
 
 
 
-        // AddWorker -> AddPipeline (получается коллекция расписаний в памяти), возможно это сервис какой то должен быть
-        // его будет запрашивать BizFlowScheduler в своем цикле
-        public static IServiceCollection AddPipeline(this IServiceCollection services, string name,
-            Func<IServiceProvider, IWorker> workerFactory, Func<IServiceProvider, ISchedule> scheduleFactory)
-        {
-            //services.AddSingleton(sp => new PipelineDefinition(name,
-            //    workerFactory(sp), scheduleFactory(sp)));
+        //// AddWorker -> AddPipeline (получается коллекция расписаний в памяти), возможно это сервис какой то должен быть
+        //// его будет запрашивать BizFlowScheduler в своем цикле
+        //public static IServiceCollection AddPipeline(this IServiceCollection services, string name,
+        //    Func<IServiceProvider, IWorker> workerFactory, Func<IServiceProvider, ISchedule> scheduleFactory)
+        //{
+        //    //services.AddSingleton(sp => new PipelineDefinition(name,
+        //    //    workerFactory(sp), scheduleFactory(sp)));
 
-            return services;
-        }
+        //    return services;
+        //}
 
 
     }
