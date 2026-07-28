@@ -30,7 +30,7 @@ namespace BizFlow.Core.Internal.Jobs
             {
                 _logger.LogInformation($"Pipeline execution started. [PipelineName: {currentlyTriggerInfo.PipelineName}]");
                 
-                await _pipelineExecutor.Execute(context);
+                //await _pipelineExecutor.Execute(context);
 
                 _logger.LogInformation($"Pipeline execution completed. [PipelineName: {currentlyTriggerInfo.PipelineName}");
             }

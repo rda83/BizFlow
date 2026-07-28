@@ -46,9 +46,12 @@ namespace BizFlow.Extensions.DependencyInjection
             var options = new BizFlowSchedulerOptions();
             configure?.Invoke(options);
 
+            
+
             services.TryAddSingleton<IBizFlowPipelineRegistry, DefaultBizFlowPipelineRegistry>();
             services.AddSingleton<ITimeProvider>(options.TimeProvider ?? new SystemTimeProvider());
 
+            services.AddScoped<PipelineExecutor>();
             services.AddHostedService<BizFlowScheduler>();
             return services;
         }
