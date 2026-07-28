@@ -1,22 +1,19 @@
-﻿using System;
+﻿using BizFlow.Abstractions.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
-// - нужен отдельный сервис синглтон - хранилище пайплайнов
 namespace BizFlow.Abstractions
 {
-    public class IBizFlowPipelineRegistry //
+    public interface IBizFlowPipelineRegistry
     {
-        // public async Task CreatePipeline(string pipelineName, ISchedule schedule, CancellationToken ct = default)
+        Task<IReadOnlyList<PipelineDefinition>> GetAllAsync(CancellationToken ct = default);
+        Task CreateAsync(PipelineDefinition pipeline, CancellationToken ct = default);
+        Task<bool> RemoveAsync(string pipelineName, CancellationToken ct = default);
 
-
-
-
-        // public async Task DeleteTrigger(string pipelineName, CancellationToken cancellationToken = default)
-        // ?? public async Task StartNow(string pipelineName, string launchId, CancellationToken cancellationToken = default) - или отдельный вид шедаллера
-        // public async Task<bool> TriggerCheckExists(string triggerName, CancellationToken cancellationToken = default)
+        event EventHandler<PipelineDefinition>? PipelineAdded;
+        event EventHandler<string>? PipelineRemoved;
     }
 }
