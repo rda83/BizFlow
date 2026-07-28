@@ -61,7 +61,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 TypeOperationId = pipelineItem.TypeOperationId,
                 LaunchId = launchId,
                 Message = string.Empty,
-                Trigger = pipeline.CronExpression,
+                //Trigger = pipeline.CronExpression,
                 IsStartNow = isStartNowPipeline,
             });
         }
@@ -78,7 +78,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 TypeOperationId = pipelineItem.TypeOperationId,
                 LaunchId = launchId,
                 Message = string.Empty,
-                Trigger = pipeline.CronExpression,
+                //Trigger = pipeline.CronExpression,
             });
         }
         public async Task AddSuccess(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
@@ -94,7 +94,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 TypeOperationId = pipelineItem.TypeOperationId,
                 LaunchId = launchId,
                 Message = string.Empty,
-                Trigger = pipeline.CronExpression,
+                //Trigger = pipeline.CronExpression,
                 IsStartNow = isStartNowPipeline,
             });
         }
@@ -111,7 +111,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 TypeOperationId = pipelineItem.TypeOperationId,
                 LaunchId = launchId,
                 Message = string.Empty,
-                Trigger = pipeline.CronExpression,
+                //Trigger = pipeline.CronExpression,
                 IsStartNow = isStartNowPipeline,
             });
         }

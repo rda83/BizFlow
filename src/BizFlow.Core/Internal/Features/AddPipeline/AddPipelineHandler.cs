@@ -66,7 +66,7 @@ namespace BizFlow.Core.Internal.Features.AddPipeline
 
             var pipeline = new Pipeline(); // TODO: Builder
             pipeline.Name = command.Name;
-            pipeline.CronExpression = command.CronExpression;
+            //pipeline.CronExpression = command.CronExpression;
             pipeline.Description = command.Description;
             pipeline.Blocked = command.Blocked;
             pipeline.PipelineItems = command.PipelineItems.Select(i =>

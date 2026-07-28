@@ -53,7 +53,7 @@ namespace BizFlow.Core.Internal.Features.StatusPipeline
             {
                 PipelineName = pipeLine.Name,
                 Description = pipeLine.Description,
-                CronExpression = pipeLine.CronExpression,
+                //CronExpression = pipeLine.CronExpression,
             };
 
             var firstAction = journalRecords.FirstOrDefault();

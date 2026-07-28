@@ -16,7 +16,7 @@
         public Pipeline(Abstractions.Model.Pipeline pipelineDto)
         {
             Name = pipelineDto.Name;
-            CronExpression = pipelineDto.CronExpression;
+            //CronExpression = pipelineDto.CronExpression;
             Description = pipelineDto.Description;
             Blocked = pipelineDto.Blocked;
         }
@@ -26,7 +26,7 @@
             var result = new Abstractions.Model.Pipeline()
             {
                 Name = Name,
-                CronExpression = CronExpression,
+                //CronExpression = CronExpression,
                 Description = Description,
                 Blocked = Blocked,
             };

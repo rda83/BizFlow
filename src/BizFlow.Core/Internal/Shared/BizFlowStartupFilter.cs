@@ -30,8 +30,8 @@ namespace BizFlow.Core.Internal.Shared
 
                         foreach (var item in pageResult.Pipelines)
                         {
-                            bizFlowJobManager.CrerateTrigger(item.Name, item.CronExpression)
-                                .GetAwaiter().GetResult();
+                            //bizFlowJobManager.CrerateTrigger(item.Name, item.CronExpression)
+                            //    .GetAwaiter().GetResult();
                         }
 
                         if (pageResult.Pipelines.Count < PAGE_SIZE)

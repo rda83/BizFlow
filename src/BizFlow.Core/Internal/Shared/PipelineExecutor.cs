@@ -69,7 +69,7 @@ namespace BizFlow.Core.Internal.Shared
                         ItemId = pipelineItem.Id,
                         ItemSortOrder = pipelineItem.SortOrder,
                         TypeOperationId = pipelineItem.TypeOperationId,
-                        Trigger = pipeline.CronExpression,
+                        //Trigger = pipeline.CronExpression,
                         IsStartNowPipeline = isStartNowPipeline,
                         CancellationRequestId = cancellationRequest.Id,
                     };
@@ -152,7 +152,7 @@ namespace BizFlow.Core.Internal.Shared
                         ItemId = pipelineItem.Id,
                         ItemSortOrder = pipelineItem.SortOrder,
                         TypeOperationId = pipelineItem.TypeOperationId,
-                        Trigger = pipeline.CronExpression,
+                        //Trigger = pipeline.CronExpression,
                         IsStartNowPipeline = isStartNowPipeline,
                     };
                     await _journal.AddCanceled(cancelOperationArgs);
