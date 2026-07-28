@@ -38,7 +38,7 @@ namespace BizFlow.Core
             _pipelineRegistry.OnRemoved += OnJobRemoved;
         }
 
-        private void OnJobAdded(object? sender, PipelineDefinition pipelineDef)
+        private void OnJobAdded(object? sender, Pipeline     pipelineDef)
         {
             _lastRunTimes.TryAdd(pipelineDef.Name, null);
             _runningStates.TryAdd(pipelineDef.Name, false);
@@ -148,29 +148,29 @@ namespace BizFlow.Core
             await Task.Delay(delay, stoppingToken);
         }
 
-        private async Task ExecuteJobAsync(PipelineDefinition jobDef, CancellationToken appStoppingToken)
+        private async Task ExecuteJobAsync(Pipeline pipelineDef, CancellationToken appStoppingToken)
         {
             using var scope = _scopeFactory.CreateScope();
             // здесь можно получить контекст задания, если он зарегистрирован как Scoped
 
             try
             {
-                _logger.LogInformation("Task '{JobName}' started execution.", jobDef.Name);
+                _logger.LogInformation("Task '{JobName}' started execution.", pipelineDef.Name);
 
                 // Возможно необходим таймаут выполнения, например как параметр.
 
                 //await jobDef.Worker.ExecuteAsync(null, appStoppingToken);
 
-                _logger.LogInformation("Task '{JobName}' completed successfully.", jobDef.Name);
+                _logger.LogInformation("Task '{JobName}' completed successfully.", pipelineDef.Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Task '{JobName}' failed with an error.", jobDef.Name);
+                _logger.LogError(ex, "Task '{JobName}' failed with an error.", pipelineDef.Name);
             }
             finally
             {
                 // TODO: Если пока выполнялась задача - она была удалена
-                _runningStates[jobDef.Name] = false;
+                _runningStates[pipelineDef.Name] = false;
             }
         }
     }

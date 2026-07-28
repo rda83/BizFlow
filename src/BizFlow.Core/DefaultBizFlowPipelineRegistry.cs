@@ -6,18 +6,18 @@ namespace BizFlow.Core
 {
     public class DefaultBizFlowPipelineRegistry : IBizFlowPipelineRegistry
     {
-        private readonly ConcurrentDictionary<string, PipelineDefinition> _pipelineDefinitions = new();
+        private readonly ConcurrentDictionary<string, Pipeline> _pipelineDefinitions = new();
 
-        public event EventHandler<PipelineDefinition>? OnAdded;
+        public event EventHandler<Pipeline>? OnAdded;
         public event EventHandler<string>? OnRemoved;
 
-        public IReadOnlyList<PipelineDefinition> GetAll()
+        public IReadOnlyList<Pipeline> GetAll()
         {
             var result = _pipelineDefinitions.Values.ToArray();
             return result;
         }
 
-        public void Create(PipelineDefinition pipeline)
+        public void Create(Pipeline pipeline)
         {
             if (string.IsNullOrEmpty(pipeline.Name))
             {

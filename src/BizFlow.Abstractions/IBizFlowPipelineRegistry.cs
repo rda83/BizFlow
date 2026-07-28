@@ -9,12 +9,12 @@ namespace BizFlow.Abstractions
 {
     public interface IBizFlowPipelineRegistry
     {
-        IReadOnlyList<PipelineDefinition> GetAll();
-        void Create(PipelineDefinition pipeline);
+        IReadOnlyList<Pipeline> GetAll();
+        void Create(Pipeline pipeline);
         bool Remove(string pipelineName);
         bool Exist(string pipelineName);
 
-        event EventHandler<PipelineDefinition>? OnAdded;
+        event EventHandler<Pipeline>? OnAdded;
         event EventHandler<string>? OnRemoved;
     }
 }
