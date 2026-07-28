@@ -43,11 +43,11 @@ namespace BizFlow.Core
             _lastRunTimes.TryAdd(pipelineDef.Name, null);
             _runningStates.TryAdd(pipelineDef.Name, false);
 
-            var now = _timeProvider.UtcNow;
-            var nextRun = pipelineDef.Schedule.GetNextRun(null, now);
+            //var now = _timeProvider.UtcNow;
+            //var nextRun = pipelineDef.Schedule.GetNextRun(null, now);
             
             // Возможно необходим пересчет следующего запуска
-            //_logger.LogInformation("");
+            _logger.LogInformation("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
 
         private void OnJobRemoved(object? sender, string pipelineName)
@@ -62,6 +62,15 @@ namespace BizFlow.Core
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+
+            //var now = _timeProvider.UtcNow;
+            foreach (var jobDef in _pipelineRegistry.GetAll())
+            {
+                _lastRunTimes.TryAdd(jobDef.Name, null);
+                _runningStates.TryAdd(jobDef.Name, false);
+            }
+
+
             //_logger.LogInformation("Scheduler started. Tasks registered: {Count}.", _jobDefinitions.Count());
 
             _logger.LogInformation("Scheduler started.");
@@ -78,43 +87,45 @@ namespace BizFlow.Core
                 
                 foreach (var jobDef in _pipelineRegistry.GetAll())
                 {
-                    if (stoppingToken.IsCancellationRequested) break;
+                    _logger.LogInformation("EXECUTE");
 
-                    if (_nextRunTimes[jobDef.Name] == null) // TODO: проверить существует ли ключ
-                    {
-                        _nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
-                    }
-                    DateTimeOffset? nextRun = _nextRunTimes[jobDef.Name];
+                    //if (stoppingToken.IsCancellationRequested) break;
 
-                    if (nextRun.HasValue && nextRun.Value <= now)
-                    {
-                        if (_runningStates[jobDef.Name]) // TODO: проверить существует ли ключ
-                        {
-                            _logger.LogWarning("Task '{JobName}' is still running – execution skipped.", jobDef.Name);
-                            continue;
-                        }
+                    //if (_nextRunTimes[jobDef.Name] == null) // TODO: проверить существует ли ключ
+                    //{
+                    //    _nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
+                    //}
+                    //DateTimeOffset? nextRun = _nextRunTimes[jobDef.Name];
 
-                        _runningStates[jobDef.Name] = true;
-                        _lastRunTimes[jobDef.Name] = now;
+                    //if (nextRun.HasValue && nextRun.Value <= now)
+                    //{
+                    //    if (_runningStates[jobDef.Name]) // TODO: проверить существует ли ключ
+                    //    {
+                    //        _logger.LogWarning("Task '{JobName}' is still running – execution skipped.", jobDef.Name);
+                    //        continue;
+                    //    }
 
-                        // TODO: сейчас считаем от now - вычесленного до запуска задачи.
-                        // Если задача выполняется очень долго, к моменту её завершения это время может уже пройти.
-                        // Какие есть варианты:
-                        //  - оставить как есть;
-                        //  - считать от времени фактического завершения;
-                        //  - параметризировать поведение.
-                        // Стоит чётко задокументировать или параметризовать:
-                        //  NextRunAfterStart(как сейчас)
-                        //  NextRunAfterCompletion(гарантирует интервал между задачами)
-                        //  CatchUp(запустить пропущенные сразу после завершения).
+                    //    _runningStates[jobDef.Name] = true;
+                    //    _lastRunTimes[jobDef.Name] = now;
 
-                        // TODO: Если Schedule.GetNextRun - возвращает null
-                        // далее на каждой итерации будет так же получать null, IntervalDelay падает в дефолтную секунду
-                        // возможно такие задачи необходимо как то отмечать.
-                        _nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
+                    // TODO: сейчас считаем от now - вычесленного до запуска задачи.
+                    // Если задача выполняется очень долго, к моменту её завершения это время может уже пройти.
+                    // Какие есть варианты:
+                    //  - оставить как есть;
+                    //  - считать от времени фактического завершения;
+                    //  - параметризировать поведение.
+                    // Стоит чётко задокументировать или параметризовать:
+                    //  NextRunAfterStart(как сейчас)
+                    //  NextRunAfterCompletion(гарантирует интервал между задачами)
+                    //  CatchUp(запустить пропущенные сразу после завершения).
 
-                        _ = ExecuteJobAsync(jobDef, stoppingToken);
-                    }
+                    // TODO: Если Schedule.GetNextRun - возвращает null
+                    // далее на каждой итерации будет так же получать null, IntervalDelay падает в дефолтную секунду
+                    // возможно такие задачи необходимо как то отмечать.
+                    //_nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
+
+                    //_ = ExecuteJobAsync(jobDef, stoppingToken);
+                    //}
                 }
                 await IntervalDelay(stoppingToken);
             }
