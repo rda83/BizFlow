@@ -1,29 +1,64 @@
 ﻿using BizFlow.Abstractions;
 using BizFlow.Abstractions.Model;
+using System.Collections.Concurrent;
 
 namespace BizFlow.Core
 {
     public class DefaultBizFlowPipelineRegistry : IBizFlowPipelineRegistry
     {
-        //private readonly ConcurrentDictionary<string, PipelineDefinition> _jobDefinitions = new();
-
+        private readonly ConcurrentDictionary<string, PipelineDefinition> _pipelineDefinitions = new();
 
         public event EventHandler<PipelineDefinition>? PipelineAdded;
         public event EventHandler<string>? PipelineRemoved;
 
-        public Task<IReadOnlyList<PipelineDefinition>> GetAllAsync(CancellationToken ct = default)
+        public IReadOnlyList<PipelineDefinition> GetAll()
         {
-            throw new NotImplementedException();
+            var result = _pipelineDefinitions.Values.ToArray();
+            return result;
         }
 
-        public Task CreateAsync(PipelineDefinition pipeline, CancellationToken ct = default)
+        public void Create(PipelineDefinition pipeline)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(pipeline.Name))
+            {
+                throw new ArgumentException("Pipeline name is required.", nameof(pipeline));
+            }
+
+            var added = _pipelineDefinitions.TryAdd(pipeline.Name, pipeline);
+
+            if (!added)
+            {
+                throw new InvalidOperationException($"Pipeline '{pipeline.Name}' already exists.");
+            }
+
+            PipelineAdded?.Invoke(this, pipeline);
         }
 
-        public Task<bool> RemoveAsync(string pipelineName, CancellationToken ct = default)
+        public bool Remove(string pipelineName)
         {
-            throw new NotImplementedException();
+            if (string.IsNullOrEmpty(pipelineName))
+            {
+                throw new ArgumentException("Pipeline name is required.", nameof(pipelineName));
+            }
+
+            var removed = _pipelineDefinitions.TryRemove(pipelineName, out  var _);
+            if (removed)
+            {
+                PipelineRemoved?.Invoke(this, pipelineName);
+            }          
+            return removed;
+        }
+
+        public bool Exist(string pipelineName)
+        {
+            if (string.IsNullOrEmpty(pipelineName))
+            {
+                throw new ArgumentException("Pipeline name is required.", nameof(pipelineName));
+            }
+
+            var result = _pipelineDefinitions.ContainsKey(pipelineName);
+            
+            return result;
         }
     }
 }

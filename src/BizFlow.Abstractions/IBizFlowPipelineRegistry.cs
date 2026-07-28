@@ -9,9 +9,10 @@ namespace BizFlow.Abstractions
 {
     public interface IBizFlowPipelineRegistry
     {
-        Task<IReadOnlyList<PipelineDefinition>> GetAllAsync(CancellationToken ct = default);
-        Task CreateAsync(PipelineDefinition pipeline, CancellationToken ct = default);
-        Task<bool> RemoveAsync(string pipelineName, CancellationToken ct = default);
+        IReadOnlyList<PipelineDefinition> GetAll();
+        void Create(PipelineDefinition pipeline);
+        bool Remove(string pipelineName);
+        bool Exist(string pipelineName);
 
         event EventHandler<PipelineDefinition>? PipelineAdded;
         event EventHandler<string>? PipelineRemoved;

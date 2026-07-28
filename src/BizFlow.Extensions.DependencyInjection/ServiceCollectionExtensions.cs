@@ -53,9 +53,7 @@ namespace BizFlow.Extensions.DependencyInjection
 
 
             services.TryAddSingleton<IBizFlowPipelineRegistry, DefaultBizFlowPipelineRegistry>();
-            // реализация методов
-            // интеграция в BizFlowScheduler
-            // инициализация существующих задач (JobBootstrapper)
+
 
             services.AddSingleton<ITimeProvider>(options.TimeProvider ?? new SystemTimeProvider());
 
