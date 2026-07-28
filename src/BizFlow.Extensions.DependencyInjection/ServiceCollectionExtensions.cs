@@ -39,43 +39,18 @@ namespace BizFlow.Extensions.DependencyInjection
                 }
             }
         }
-
-
-      
-
+ 
         public static IServiceCollection AddBizFlowScheduler(this IServiceCollection services,
             Action<BizFlowSchedulerOptions>? configure = null)
         {
             var options = new BizFlowSchedulerOptions();
             configure?.Invoke(options);
 
-
-
-
             services.TryAddSingleton<IBizFlowPipelineRegistry, DefaultBizFlowPipelineRegistry>();
-
-
             services.AddSingleton<ITimeProvider>(options.TimeProvider ?? new SystemTimeProvider());
-
-            
 
             services.AddHostedService<BizFlowScheduler>();
             return services;
         }
-
-
-
-        //// AddWorker -> AddPipeline (получается коллекция расписаний в памяти), возможно это сервис какой то должен быть
-        //// его будет запрашивать BizFlowScheduler в своем цикле
-        //public static IServiceCollection AddPipeline(this IServiceCollection services, string name,
-        //    Func<IServiceProvider, IWorker> workerFactory, Func<IServiceProvider, ISchedule> scheduleFactory)
-        //{
-        //    //services.AddSingleton(sp => new PipelineDefinition(name,
-        //    //    workerFactory(sp), scheduleFactory(sp)));
-
-        //    return services;
-        //}
-
-
     }
 }
