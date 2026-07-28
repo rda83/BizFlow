@@ -15,7 +15,7 @@ namespace BizFlow.Core
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<BizFlowScheduler> _logger;
 
-        private readonly ConcurrentDictionary<string, JobDefinition> _jobDefinitions = new();
+        // private readonly ConcurrentDictionary<string, PipelineDefinition> _jobDefinitions = new();
         //IBizFlowPipelineService
 
 
@@ -23,7 +23,7 @@ namespace BizFlow.Core
         private readonly ConcurrentDictionary<string, bool> _runningStates = new();
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _nextRunTimes = new();
         
-        public BizFlowScheduler(IEnumerable<JobDefinition> jobDefinitions,
+        public BizFlowScheduler(IEnumerable<PipelineDefinition> jobDefinitions,
             IServiceScopeFactory scopeFactory,
             ILogger<BizFlowScheduler> logger,
             ITimeProvider timeProvider)
@@ -136,7 +136,7 @@ namespace BizFlow.Core
             await Task.Delay(delay, stoppingToken);
         }
 
-        private async Task ExecuteJobAsync(JobDefinition jobDef, CancellationToken appStoppingToken)
+        private async Task ExecuteJobAsync(PipelineDefinition jobDef, CancellationToken appStoppingToken)
         {
             using var scope = _scopeFactory.CreateScope();
             // здесь можно получить контекст задания, если он зарегистрирован как Scoped
