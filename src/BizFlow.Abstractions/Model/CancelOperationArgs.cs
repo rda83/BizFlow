@@ -1,5 +1,4 @@
-﻿
-namespace BizFlow.Core.Model.ExecutionServices
+﻿namespace BizFlow.Abstractions.Model
 {
     public class CancelOperationArgs
     {

@@ -2,15 +2,14 @@
 using BizFlow.Abstractions.Model;
 using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
-using BizFlow.Core.Model.ExecutionServices;
 
 namespace BizFlow.Core.Internal.Shared.ExecutionServices
 {
-    public class PipelineExecutorJournal
+    public class DEL_PipelineExecutorJournal
     {
         private readonly IBizFlowStorage _bizFlowStorage;
 
-        public PipelineExecutorJournal(IBizFlowStorage bizFlowStorage)
+        public DEL_PipelineExecutorJournal(IBizFlowStorage bizFlowStorage)
         {
             _bizFlowStorage = bizFlowStorage;
         }

@@ -47,8 +47,18 @@ namespace BizFlow.Extensions.DependencyInjection
             configure?.Invoke(options);
 
             
+            //if (options.EnableExecutionJournal)
+            //{
+            //    services.TryAddSingleton<IJobExecutionHistoryStore, LoggerJobExecutionHistoryStore>();
+            //}
+            //else
+            //{
+            //    services.TryAddSingleton<IJobExecutionHistoryStore, NullJobExecutionHistoryStore>();
+            //}
 
-            services.TryAddSingleton<IBizFlowPipelineRegistry, DefaultBizFlowPipelineRegistry>();
+
+
+            services.TryAddSingleton<IPipelineRegistry, DefaultPipelineRegistry>();
             services.AddSingleton<ITimeProvider>(options.TimeProvider ?? new SystemTimeProvider());
 
             services.AddScoped<PipelineExecutor>();

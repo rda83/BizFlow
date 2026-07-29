@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 
 namespace BizFlow.Core
 {
-    public class DefaultBizFlowPipelineRegistry : IBizFlowPipelineRegistry
+    public class DefaultPipelineRegistry : IPipelineRegistry
     {
         private readonly ConcurrentDictionary<string, Pipeline> _pipelineDefinitions = new();
 

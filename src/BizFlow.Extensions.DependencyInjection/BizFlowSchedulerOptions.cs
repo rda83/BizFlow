@@ -6,5 +6,6 @@ namespace BizFlow.Extensions.DependencyInjection
     {
         public ITimeProvider? TimeProvider { get; set; }
         public TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(1);
+        public bool EnableExecutionJournal { get; set; } = true;
     }
 }

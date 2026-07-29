@@ -16,7 +16,7 @@ namespace BizFlow.Core
 
         private readonly ITimeProvider _timeProvider;
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly IBizFlowPipelineRegistry _pipelineRegistry;
+        private readonly IPipelineRegistry _pipelineRegistry;
         private readonly ILogger<BizFlowScheduler> _logger;
 
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _lastRunTimes = new();
@@ -24,7 +24,7 @@ namespace BizFlow.Core
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _nextRunTimes = new();
         
         public BizFlowScheduler(
-            IBizFlowPipelineRegistry pipelineRegistry,
+            IPipelineRegistry pipelineRegistry,
             IServiceScopeFactory scopeFactory,
             ILogger<BizFlowScheduler> logger,
             ITimeProvider timeProvider)

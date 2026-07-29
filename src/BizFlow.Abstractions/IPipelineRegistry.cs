@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace BizFlow.Abstractions
 {
-    public interface IBizFlowPipelineRegistry
+    public interface IPipelineRegistry
     {
         IReadOnlyList<Pipeline> GetAll();
         void Create(Pipeline pipeline);
