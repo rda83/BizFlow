@@ -1,4 +1,5 @@
-﻿using BizFlow.Abstractions.Model;
+﻿using BizFlow.Abstractions;
+using BizFlow.Abstractions.Model;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BizFlow.Core
@@ -29,26 +30,28 @@ namespace BizFlow.Core
 
         public async Task Execute(Pipeline pipeline, CancellationToken ct) //IJobExecutionContext context
         {
-            //using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+            var launchId = Guid.NewGuid().ToString();
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
 
             //var triggerInfo = JobExecutionContextHelper.ExtractTriggerInfo(context);
             //var launchId = triggerInfo.LaunchId;
             //var pipelineName = triggerInfo.PipelineName;
             //var isStartNowPipeline = triggerInfo.IsStartNowPipeline;
+            var isStartNowPipeline = false;
 
             //var pipeline = await _storage.GetPipelineAsync(pipelineName);
 
-            //if (pipeline == null)
-            //{
+            if (pipeline == null)
+            {
             //    await _journal.AddError(launchId, isStartNowPipeline, $"The element for execution was not found: {pipelineName}");
-            //    return;
-            //}
-                              
-            //if (pipeline!.Blocked)
-            //{
+                return;
+            }
+
+            if (pipeline!.Blocked)
+            {
             //    await _journal.AddBlockedPipeline(launchId, isStartNowPipeline, pipeline.Name);
-            //    return;
-            //}
+                return;
+            }
 
             //var cancellationRequest = await _storage.GetActiveCancellationRequest(pipelineName);
 
@@ -82,7 +85,7 @@ namespace BizFlow.Core
 
             try
             {
-                //await ExecuteItems(pipeline, launchId, isStartNowPipeline, linkedCts.Token);   
+                await ExecuteItems(pipeline, launchId, isStartNowPipeline, linkedCts.Token);   
             }
             finally
             {
@@ -101,44 +104,44 @@ namespace BizFlow.Core
         {
             foreach (var pipelineItem in pipeline.PipelineItems.OrderBy(i => i.SortOrder))
             {
-                //if (!cancellationToken.IsCancellationRequested)
-                //{
+                if (!cancellationToken.IsCancellationRequested)
+                {
                 //    await _journal.AddStart(launchId, isStartNowPipeline, pipeline, pipelineItem);
 
-                //    if (pipelineItem.Blocked)
-                //    {
+                    if (pipelineItem.Blocked)
+                    {
                 //        await _journal.AddBlockedPipelineItem(launchId, pipeline, pipelineItem);
-                //        continue;
-                //    }
+                        continue;
+                    }
 
-                //    try
-                //    {
-                //        using (var scope = _scopeFactory.CreateScope())
-                //        {
-                //            DEL_IBizFlowWorker worker = scope.ServiceProvider
-                //                .GetRequiredKeyedService<DEL_IBizFlowWorker>(pipelineItem.TypeOperationId);
+                    try
+                    {
+                        using (var scope = _scopeFactory.CreateScope())
+                        {
+                            var worker = scope.ServiceProvider
+                                .GetRequiredKeyedService<IWorker>(pipelineItem.TypeOperationId);
 
-                //            //var workerContext = new WorkerContext();
-                //            //workerContext.LaunchId = launchId;
-                //            //workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
-                //            //workerContext.PipelineName = pipeline.Name;
-                //            //workerContext.CronExpression = pipeline.CronExpression;
-                //            //workerContext.CancellationToken = cancellationToken;
-                //            //workerContext.Options = pipelineItem.Options;
-                //            //workerContext.IsStartNowPipeline = isStartNowPipeline;
+                            var workerContext = new WorkerContext();
+                            workerContext.LaunchId = launchId;
+                            workerContext.TypeOperationId = pipelineItem.TypeOperationId ?? string.Empty;
+                            workerContext.PipelineName = pipeline.Name;
+                            //workerContext.CronExpression = pipeline.CronExpression;
+                            //workerContext.CancellationToken = cancellationToken;
+                            workerContext.Options = pipelineItem.Options;
+                            workerContext.IsStartNowPipeline = isStartNowPipeline;
 
-                //            //await worker.Run(workerContext);
-                //        }
-                //        await _journal.AddSuccess(launchId, isStartNowPipeline, pipeline, pipelineItem);
-                //    }
-                //    catch (Exception)
-                //    {
+                            await worker.ExecuteAsync(workerContext, cancellationToken);
+                        }
+                        //        await _journal.AddSuccess(launchId, isStartNowPipeline, pipeline, pipelineItem);
+                    }
+                    catch (Exception)
+                    {
                 //        await _journal.AddError(launchId, isStartNowPipeline, pipeline, pipelineItem);
-                //        throw;
-                //    }
-                //}
-                //else
-                //{
+                        throw;
+                    }
+                }
+                else
+                {
                 //    var cancelOperationArgs = new CancelOperationArgs()
                 //    {
                 //        LaunchId = launchId,
@@ -151,7 +154,7 @@ namespace BizFlow.Core
                 //        IsStartNowPipeline = isStartNowPipeline,
                 //    };
                 //    await _journal.AddCanceled(cancelOperationArgs);
-                //}           
+                }           
             }
         }
         

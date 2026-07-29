@@ -7,8 +7,8 @@ namespace BizFlow.Abstractions.Model
         public string LaunchId { get; set; }
         public string TypeOperationId { get; set; }
         public string PipelineName { get; set; }
-        public string CronExpression { get; set; }
-        public CancellationToken CancellationToken { get; set; }
+        //public string CronExpression { get; set; }
+        //public CancellationToken CancellationToken { get; set; }
         public JsonElement Options { get; set; }
         public bool IsStartNowPipeline { get; set; }
     }
