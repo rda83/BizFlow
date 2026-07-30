@@ -123,10 +123,10 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 ItemDescription = args.ItemDescription,
                 ItemSortOrder = args.ItemSortOrder,
                 ItemId = args.ItemId,
-                TypeAction = TypeBizFlowJournalAction.Canceled,
+                TypeAction = TypeBizFlowJournalAction.Cancelled,
                 TypeOperationId = args.TypeOperationId,
                 LaunchId = args.LaunchId,
-                Message = $"Операция отменена. Ид запроса на отмену: {args.CancellationRequestId}", //TODO i18n
+                Message = $"Операция отменена. Ид запроса на отмену: {args.CancellationRequestId}",
                 Trigger = args.Trigger,
                 IsStartNow = args.IsStartNowPipeline,
             });

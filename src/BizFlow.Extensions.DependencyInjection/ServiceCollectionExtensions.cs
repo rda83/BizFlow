@@ -46,15 +46,15 @@ namespace BizFlow.Extensions.DependencyInjection
             var options = new BizFlowSchedulerOptions();
             configure?.Invoke(options);
 
-            
-            //if (options.EnableExecutionJournal)
-            //{
-            //    services.TryAddSingleton<IJobExecutionHistoryStore, LoggerJobExecutionHistoryStore>();
-            //}
-            //else
-            //{
-            //    services.TryAddSingleton<IJobExecutionHistoryStore, NullJobExecutionHistoryStore>();
-            //}
+
+            if (options.EnableExecutionJournal)
+            {
+                //services.TryAddSingleton<IExecutionJournal, LoggerJobExecutionHistoryStore>();
+            }
+            else
+            {
+                services.TryAddSingleton<IExecutionJournal, NullExecutionJournal>();
+            }
 
 
 

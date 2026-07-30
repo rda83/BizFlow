@@ -12,18 +12,20 @@ namespace BizFlow.Core
         //private readonly IBizFlowStorage _storage;
         //private readonly ICancelPipelineHandler _cancelPipelineHandler;
 
+        private readonly IExecutionJournal _journal;
+
         public PipelineExecutor(
             //IBizFlowStorage storage,
-            IServiceScopeFactory scopeFactory
+            IServiceScopeFactory scopeFactory,
             //PipelineExecutorJournal journal,
             //CancellationMonitorService cancellationMonitor,
             //ICancelPipelineHandler cancelPipelineHandler
-            
+            IExecutionJournal journal
             )
         {
             //_storage = storage;
             _scopeFactory = scopeFactory;
-            //_journal = journal;
+            _journal = journal;
             //_cancellationMonitor = cancellationMonitor;
             //_cancelPipelineHandler = cancelPipelineHandler;
         }
@@ -41,15 +43,17 @@ namespace BizFlow.Core
 
             //var pipeline = await _storage.GetPipelineAsync(pipelineName);
 
+            
             if (pipeline == null)
             {
-            //    await _journal.AddError(launchId, isStartNowPipeline, $"The element for execution was not found: {pipelineName}");
+                await _journal.AddErrorAsync(launchId, isStartNowPipeline, $"The element for execution was not found: [TODO ...]");
                 return;
             }
 
+            pipeline!.Blocked = true; // DEBUG
             if (pipeline!.Blocked)
             {
-            //    await _journal.AddBlockedPipeline(launchId, isStartNowPipeline, pipeline.Name);
+                await _journal.AddBlockedPipelineAsync(launchId, isStartNowPipeline, pipeline.Name);
                 return;
             }
 
@@ -106,7 +110,7 @@ namespace BizFlow.Core
             {
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                //    await _journal.AddStart(launchId, isStartNowPipeline, pipeline, pipelineItem);
+                    await _journal.AddStartAsync(launchId, isStartNowPipeline, pipeline, pipelineItem);
 
                     if (pipelineItem.Blocked)
                     {

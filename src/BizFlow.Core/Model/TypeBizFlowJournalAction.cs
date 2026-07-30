@@ -26,6 +26,6 @@ namespace BizFlow.Core.Model
         Info,
 
         [EnumMember(Value = "canceled")]
-        Canceled
+        Cancelled
     }
 }
