@@ -14,7 +14,12 @@ namespace BizFlow.Abstractions
             return Task.CompletedTask;
         }
 
-        public Task AddCancelledAsync(CancelOperationArgs args)
+        public Task AddCancelledPipelineAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task AddCancelledPipelineItemAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
             throw new NotImplementedException();
         }
@@ -24,7 +29,7 @@ namespace BizFlow.Abstractions
             return Task.CompletedTask;
         }
 
-        public Task AddErrorAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
+        public Task AddErrorAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem, string msg)
         {
             return Task.CompletedTask;
         }

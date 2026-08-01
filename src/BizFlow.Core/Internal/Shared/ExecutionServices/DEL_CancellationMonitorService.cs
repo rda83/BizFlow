@@ -4,11 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace BizFlow.Core.Internal.Shared.ExecutionServices
 {
-    public class CancellationMonitorService
+    public class DEL_CancellationMonitorService
     {
         private readonly IServiceScopeFactory _scopeFactory;
 
-        public CancellationMonitorService(IServiceScopeFactory scopeFactory)
+        public DEL_CancellationMonitorService(IServiceScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory;
         }

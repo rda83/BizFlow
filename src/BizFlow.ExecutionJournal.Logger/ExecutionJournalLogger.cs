@@ -64,7 +64,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
-        public Task AddCancelledAsync(CancelOperationArgs args)
+        public Task AddCancelledPipelineAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline)
         {
             var msg = """
                 Pipeline cancelled: {StepDescription}
@@ -73,18 +73,43 @@ namespace BizFlow.ExecutionJournal.Logger
                 Trigger: {Trigger}, IsStartNow: {IsStartNow})
                 """;
             _logger.LogInformation(msg,
-                args.PipelineName,                                                              // StepDescription 
-                DateTime.Now,                                                                   // Period
-                args.PipelineName,                                                              // PipelineName
-                args.ItemDescription,                                                           // ItemDescription
-                args.ItemSortOrder,                                                             // ItemSortOrder
-                args.ItemId,                                                                    // ItemId
-                TypeBizFlowJournalAction.Cancelled,                                              // TypeAction
-                args.TypeOperationId,                                                           // TypeOperationId
-                args.LaunchId,                                                                  // LaunchId
-                $"Operation cancelled. Cancellation request ID: {args.CancellationRequestId}",  // Message
-                args.Trigger,                                                                   // Trigger
-                args.IsStartNowPipeline);                                                       // IsStartNow
+                pipeline.Name,                          // StepDescription 
+                DateTime.Now,                           // Period
+                pipeline.Name,                          // PipelineName
+                string.Empty,                           // ItemDescription
+                0,                                      // ItemSortOrder
+                0,                                      // ItemId
+                TypeBizFlowJournalAction.Cancelled,     // TypeAction
+                string.Empty,                           // TypeOperationId
+                launchId,                               // LaunchId
+                $"Pipeline cancelled",                  // Message
+                string.Empty,                           // Trigger
+                isStartNowPipeline);                    // IsStartNow
+
+            return Task.CompletedTask;
+        }
+
+        public Task AddCancelledPipelineItemAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
+        {
+            var msg = """
+                Pipeline item cancelled: {StepDescription}
+                (Period: {Period}, PipelineName: {PipelineName}, ItemDescription: {ItemDescription}, ItemSortOrder: {ItemSortOrder},
+                ItemId: {ItemId}, TypeAction: {TypeAction}, TypeOperationId: {TypeOperationId}, LaunchId: {LaunchId}, Message: {Message},
+                Trigger: {Trigger}, IsStartNow: {IsStartNow})
+                """;
+            _logger.LogInformation(msg,
+                pipeline.Name,                          // StepDescription 
+                DateTime.Now,                           // Period
+                pipeline.Name,                          // PipelineName
+                pipelineItem.Description,               // ItemDescription
+                pipelineItem.SortOrder,                 // ItemSortOrder
+                pipelineItem.Id,                        // ItemId
+                TypeBizFlowJournalAction.Cancelled,     // TypeAction
+                pipelineItem.TypeOperationId,           // TypeOperationId
+                launchId,                               // LaunchId
+                $"Pipeline item cancelled",             // Message
+                string.Empty,                           // Trigger
+                isStartNowPipeline);                    // IsStartNow
 
             return Task.CompletedTask;
         }
@@ -115,15 +140,15 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
-        public Task AddErrorAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
+        public Task AddErrorAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem, string msg)
         {
-            var msg = """
+            var msgText = """
                 Pipeline error: {StepDescription}
                 (Period: {Period}, PipelineName: {PipelineName}, ItemDescription: {ItemDescription}, ItemSortOrder: {ItemSortOrder},
                 ItemId: {ItemId}, TypeAction: {TypeAction}, TypeOperationId: {TypeOperationId}, LaunchId: {LaunchId}, Message: {Message},
                 Trigger: {Trigger}, IsStartNow: {IsStartNow})
                 """;
-            _logger.LogInformation(msg,
+            _logger.LogInformation(msgText,
                 pipelineItem.Description,           // StepDescription
                 DateTime.Now,                       // Period    
                 pipeline.Name,                      // PipelineName
@@ -133,7 +158,7 @@ namespace BizFlow.ExecutionJournal.Logger
                 TypeBizFlowJournalAction.Error,     // TypeAction
                 pipelineItem.TypeOperationId,       // TypeOperationId
                 launchId,                           // LaunchId
-                string.Empty,                       // Message
+                msg,                                // Message
                 string.Empty,                       // Trigger
                 false);                             // IsStartNow
 

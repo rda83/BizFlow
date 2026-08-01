@@ -1,6 +1,6 @@
 ﻿namespace BizFlow.Abstractions.Model
 {
-    public class CancelOperationArgs
+    public class DEL_CancelOperationArgs
     {
         public string LaunchId { get; set; } = string.Empty;
         public string PipelineName { get; set; } = string.Empty;

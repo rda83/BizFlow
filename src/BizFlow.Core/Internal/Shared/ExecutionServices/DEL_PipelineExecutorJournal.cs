@@ -114,7 +114,7 @@ namespace BizFlow.Core.Internal.Shared.ExecutionServices
                 IsStartNow = isStartNowPipeline,
             });
         }
-        public async Task AddCanceled(CancelOperationArgs args)
+        public async Task AddCanceled(DEL_CancelOperationArgs args)
         {
             await _bizFlowStorage.AddJournalRecordAsync(new JournalRecord()
             {
