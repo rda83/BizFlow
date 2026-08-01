@@ -15,7 +15,7 @@ namespace BizFlow.ExecutionJournal.Database
             throw new NotImplementedException();
         }
 
-        public Task AddCanceledAsync(CancelOperationArgs args)
+        public Task AddCancelledAsync(CancelOperationArgs args)
         {
             throw new NotImplementedException();
         }

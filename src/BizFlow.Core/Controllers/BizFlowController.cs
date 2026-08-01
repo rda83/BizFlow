@@ -1,4 +1,5 @@
-﻿using BizFlow.Core.Contracts.Storage;
+﻿using BizFlow.Abstractions;
+using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Internal.Features.AddPipeline;
 using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
@@ -176,6 +177,27 @@ namespace BizFlow.Core.Controllers
 
             var result = await handler.CloseCancellationRequest(command);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// Отладка механизма отмены выполнения пайплайна
+        /// </summary>
+        /// <returns>Результат операции</returns>
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpPost("pipeline/cancelPipelineTest")]
+        public async Task<IActionResult> CancelPipelineTest([FromBody] CancelPipelineCommand command,
+            [FromServices] ICancellationService cancellationService)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            cancellationService.Cancel(command.PipelineName);
+            return Ok();
         }
     }
 }

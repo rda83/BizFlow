@@ -12,6 +12,5 @@ namespace BizFlow.Abstractions
         Task AddBlockedPipelineItemAsync(string launchId, Pipeline pipeline, PipelineItem pipelineItem);
         Task AddSuccessAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem);
         Task AddCancelledAsync(CancelOperationArgs args);
-
     }
 }

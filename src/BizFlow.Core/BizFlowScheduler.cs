@@ -7,7 +7,7 @@ using System.Collections.Concurrent;
 
 namespace BizFlow.Core
 {
-    public class BizFlowScheduler : BackgroundService
+    public class BizFlowScheduler : BackgroundService, ICancellationService
     {
         private const int DEFAULT_DELAY_INTERVAL_SECONDS = 1;
 
@@ -180,6 +180,12 @@ namespace BizFlow.Core
                 // TODO: Если пока выполнялась задача - она была удалена
                 _runningStates[pipeline.Name] = false;
             }
+        }
+
+        public bool Cancel(string pipelineName)
+        {
+            _logger.LogInformation($"Cancel pipeline: {pipelineName}");
+            return true;
         }
     }
 }

@@ -14,9 +14,9 @@ namespace BizFlow.Abstractions
             return Task.CompletedTask;
         }
 
-        public Task AddCanceledAsync(CancelOperationArgs args)
+        public Task AddCancelledAsync(CancelOperationArgs args)
         {
-            return Task.CompletedTask;
+            throw new NotImplementedException();
         }
 
         public Task AddErrorAsync(string launchId, bool isStartNowPipeline, string msg)

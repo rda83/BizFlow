@@ -62,7 +62,12 @@ namespace BizFlow.Extensions.DependencyInjection
             services.AddSingleton<ITimeProvider>(options.TimeProvider ?? new SystemTimeProvider());
 
             services.AddScoped<PipelineExecutor>();
-            services.AddHostedService<BizFlowScheduler>();
+
+
+            services.AddSingleton<BizFlowScheduler>();
+            services.AddSingleton<ICancellationService>(sp => sp.GetRequiredService<BizFlowScheduler>());
+            services.AddHostedService<BizFlowScheduler>(sp => sp.GetRequiredService<BizFlowScheduler>());
+            
             return services;
         }
     }
