@@ -22,7 +22,9 @@ namespace BizFlow.Core
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _lastRunTimes = new();
         private readonly ConcurrentDictionary<string, bool> _runningStates = new();
         private readonly ConcurrentDictionary<string, DateTimeOffset?> _nextRunTimes = new();
-        
+
+        private readonly ConcurrentDictionary<string, CancellationTokenSource> _runningTokenSources = new();
+
         public BizFlowScheduler(
             IPipelineRegistry pipelineRegistry,
             IServiceScopeFactory scopeFactory,
@@ -38,7 +40,7 @@ namespace BizFlow.Core
             _pipelineRegistry.OnRemoved += OnJobRemoved;
         }
 
-        private void OnJobAdded(object? sender, Pipeline     pipelineDef)
+        private void OnJobAdded(object? sender, Pipeline pipelineDef)
         {
             _lastRunTimes.TryAdd(pipelineDef.Name, null);
             _runningStates.TryAdd(pipelineDef.Name, false);
@@ -58,7 +60,7 @@ namespace BizFlow.Core
             //_logger.LogInformation("");
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken appStoppingToken)
         {
             //var now = _timeProvider.UtcNow;
             foreach (var jobDef in _pipelineRegistry.GetAll())
@@ -75,7 +77,7 @@ namespace BizFlow.Core
             //TODO: можно явно завернуть цикл в try-catch (OperationCanceledException)
             // и залогировать «Scheduler stopped by cancellation».
 
-            while (!stoppingToken.IsCancellationRequested)
+            while (!appStoppingToken.IsCancellationRequested)
             {
                 _logger.LogInformation(tik ? "tik" : "tak");
                 tik = !tik;
@@ -86,7 +88,7 @@ namespace BizFlow.Core
                 {
                     _logger.LogInformation("EXECUTE");
 
-                    if (stoppingToken.IsCancellationRequested) break;
+                    if (appStoppingToken.IsCancellationRequested) break;
 
                     if (_nextRunTimes[jobDef.Name] == null) // TODO: проверить существует ли ключ
                     {
@@ -122,15 +124,15 @@ namespace BizFlow.Core
                         // возможно такие задачи необходимо как то отмечать.
                         _nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
 
-                        _ = ExecuteJobAsync(jobDef, stoppingToken);
+                        _ = ExecuteJobAsync(jobDef, appStoppingToken);
                     }
                 }
-                await IntervalDelay(stoppingToken);
+                await IntervalDelay(appStoppingToken);
             }
             _logger.LogInformation("Scheduler stopped.");
         }
 
-        private async Task IntervalDelay(CancellationToken stoppingToken)
+        private async Task IntervalDelay(CancellationToken appStoppingToken)
         {
             // TODO: Проблема динамического добавления / удаления
             // Если задержка вычислена по старому набору(например, 5 минут до ближайшего запуска),
@@ -154,11 +156,14 @@ namespace BizFlow.Core
                 }
             }
 
-            await Task.Delay(delay, stoppingToken);
+            await Task.Delay(delay, appStoppingToken);
         }
 
-        private async Task ExecuteJobAsync(Pipeline pipeline, CancellationToken ct)
+        private async Task ExecuteJobAsync(Pipeline pipeline, CancellationToken appStoppingToken)
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(appStoppingToken);
+            _runningTokenSources.TryAdd(pipeline.Name, cts);
+
             try
             {
                 _logger.LogInformation("Task '{JobName}' started execution.", pipeline.Name);
@@ -166,10 +171,14 @@ namespace BizFlow.Core
                 using (var scope = _scopeFactory.CreateScope())
                 {
                     var executor = scope.ServiceProvider.GetRequiredService<PipelineExecutor>();
-                    await executor.Execute(pipeline, ct);
+                    await executor.Execute(pipeline, cts.Token);
                 }
 
                 _logger.LogInformation("Task '{JobName}' completed successfully.", pipeline.Name);
+            }
+            catch (OperationCanceledException)
+            {
+                _logger.LogInformation("Task '{JobName}' cancelled.", pipeline.Name);
             }
             catch (Exception ex)
             {
@@ -179,13 +188,21 @@ namespace BizFlow.Core
             {
                 // TODO: Если пока выполнялась задача - она была удалена
                 _runningStates[pipeline.Name] = false;
+                _runningTokenSources.TryRemove(pipeline.Name, out _);
             }
         }
 
         public bool Cancel(string pipelineName)
         {
             _logger.LogInformation($"Cancel pipeline: {pipelineName}");
-            return true;
+
+            if (_runningTokenSources.TryGetValue(pipelineName, out var cts))
+            {
+                cts.Cancel();
+                return true;
+            }
+
+            return false;
         }
     }
 }

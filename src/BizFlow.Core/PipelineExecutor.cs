@@ -44,29 +44,6 @@ namespace BizFlow.Core
             _journal = journal;
         }
 
-        public async Task Execute(Pipeline pipeline, CancellationToken ct)
-        {
-            ct.ThrowIfCancellationRequested();
-
-            var launchId = Guid.NewGuid().ToString();
-                      
-            var isStartNowPipeline = false; // DEBUG
-
-            if (pipeline == null)
-            {
-                await _journal.AddErrorAsync(launchId, isStartNowPipeline, "The pipeline parameter was null. Execution cannot proceed.");
-                return;
-            }
-
-            if (pipeline.Blocked)
-            {
-                await _journal.AddBlockedPipelineAsync(launchId, isStartNowPipeline, pipeline.Name);
-                return;
-            }
-
-            await ExecuteAllItems(pipeline, launchId, isStartNowPipeline, ct);   
-        }
-
         /// <summary>
         /// Starts execution of the specified <paramref name="pipeline"/>.
         /// </summary>
@@ -96,6 +73,29 @@ namespace BizFlow.Core
         /// </exception>
         /// <seealso cref="IWorker"/>
         /// <seealso cref="IExecutionJournal"/>
+        public async Task Execute(Pipeline pipeline, CancellationToken ct)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var launchId = Guid.NewGuid().ToString();
+                      
+            var isStartNowPipeline = false; // DEBUG
+
+            if (pipeline == null)
+            {
+                await _journal.AddErrorAsync(launchId, isStartNowPipeline, "The pipeline parameter was null. Execution cannot proceed.");
+                return;
+            }
+
+            if (pipeline.Blocked)
+            {
+                await _journal.AddBlockedPipelineAsync(launchId, isStartNowPipeline, pipeline.Name);
+                return;
+            }
+
+            await ExecuteAllItems(pipeline, launchId, isStartNowPipeline, ct);   
+        }
+
         private async Task ExecuteAllItems(Pipeline pipeline, string launchId, bool isStartNowPipeline,  CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
