@@ -25,6 +25,8 @@ namespace BizFlow.Core
 
         private readonly ConcurrentDictionary<string, CancellationTokenSource> _runningTokenSources = new();
 
+        private readonly SemaphoreSlim _wakeSignal = new SemaphoreSlim(0, 1);
+
         public BizFlowScheduler(
             IPipelineRegistry pipelineRegistry,
             IServiceScopeFactory scopeFactory,
@@ -44,20 +46,17 @@ namespace BizFlow.Core
         {
             _lastRunTimes.TryAdd(pipelineDef.Name, null);
             _runningStates.TryAdd(pipelineDef.Name, false);
+            _nextRunTimes.TryAdd(pipelineDef.Name, null);
 
-            //var now = _timeProvider.UtcNow;
-            //var nextRun = pipelineDef.Schedule.GetNextRun(null, now);
-            
-            // Возможно необходим пересчет следующего запуска
-            _logger.LogInformation("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            _wakeSignal.Release();
+
+            _logger.LogInformation($"BizFlowScheduler: Added a new pipeline: {pipelineDef.Name}.");
         }
 
         private void OnJobRemoved(object? sender, string pipelineName)
         {
             _lastRunTimes.TryRemove(pipelineName, out _);
             _runningStates.TryRemove(pipelineName, out _);
-            // (?) _nextRunTimes
-            //_logger.LogInformation("");
         }
 
         protected override async Task ExecuteAsync(CancellationToken appStoppingToken)
@@ -134,20 +133,13 @@ namespace BizFlow.Core
 
         private async Task IntervalDelay(CancellationToken appStoppingToken)
         {
-            // TODO: Проблема динамического добавления / удаления
-            // Если задержка вычислена по старому набору(например, 5 минут до ближайшего запуска),
-            // новая задача с более ранним временем не заставит цикл проснуться раньше – реакция задержится на всю длительность Task.Delay.
-
-            //Использовать сигнализатор(например, ManualResetEventSlim или SemaphoreSlim),
-            //который сбрасывается при добавлении задачи и позволяет мгновенно пересчитать расписание.
-            
-            //Либо перейти на таймер-ориентированный подход(PeriodicTimer или System.Threading.Timer)
-
             TimeSpan delay = TimeSpan.FromSeconds(DEFAULT_DELAY_INTERVAL_SECONDS);
 
-            if(_nextRunTimes.Values.Count != 0 && !_nextRunTimes.Values.Where(i => i == null).Any())
+            var nextRunTimesSnapshot = _nextRunTimes.Values.ToList();
+
+            if (nextRunTimesSnapshot.Count != 0 && !nextRunTimesSnapshot.Where(i => i == null).Any())
             {
-                var nextRun = _nextRunTimes.Values.OrderBy(i => i).FirstOrDefault();
+                var nextRun = nextRunTimesSnapshot.OrderBy(i => i).FirstOrDefault();
                 delay = (nextRun! - _timeProvider.UtcNow).Value;
 
                 if (delay < TimeSpan.Zero)
@@ -156,7 +148,14 @@ namespace BizFlow.Core
                 }
             }
 
-            await Task.Delay(delay, appStoppingToken);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(appStoppingToken);
+                
+            var delayTask = Task.Delay(delay, linkedCts.Token);
+            var wakeTask = _wakeSignal.WaitAsync(linkedCts.Token);
+
+            var completedTask = await Task.WhenAny(delayTask, wakeTask);
+
+            linkedCts.Cancel();
         }
 
         private async Task ExecuteJobAsync(Pipeline pipeline, CancellationToken appStoppingToken)

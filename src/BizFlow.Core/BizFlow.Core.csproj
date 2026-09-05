@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BizFlow.Abstractions\BizFlow.Abstractions.csproj" />
+    <ProjectReference Include="..\BizFlow.Schedules.Interval\BizFlow.Schedules.Interval.csproj" />
   </ItemGroup>
 
 </Project>

@@ -6,6 +6,7 @@ using BizFlow.Core.Internal.Features.DeletePipeline;
 using BizFlow.Core.Internal.Features.StartNowPipeline;
 using BizFlow.Core.Internal.Features.StatusPipeline;
 using BizFlow.Core.Model;
+using BizFlow.Schedules.Interval;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -179,6 +180,10 @@ namespace BizFlow.Core.Controllers
             return Ok(result);
         }
 
+
+        // DEBUG <
+
+
         /// <summary>
         /// Отладка механизма отмены выполнения пайплайна
         /// </summary>
@@ -199,5 +204,47 @@ namespace BizFlow.Core.Controllers
             cancellationService.Cancel(command.PipelineName);
             return Ok();
         }
+
+
+        /// <summary>
+        /// Отладка механизма создания пайплайна
+        /// </summary>
+        /// <returns>Результат операции</returns>
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpPost("pipeline/createPipelineTest")]
+        public async Task<IActionResult> CreatelPipelineTest([FromBody] AddPipelineCommand command,
+            [FromServices] IPipelineRegistry pipelineRegistry)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+
+            var newPipeline = new BizFlow.Abstractions.Model.Pipeline();
+
+            newPipeline.Name = command.Name;
+            newPipeline.Description = command.Description;
+            newPipeline.Schedule = new IntervalSchedule(TimeSpan.FromSeconds(30)); // Только на время отладки
+
+            foreach (var item in command.PipelineItems)
+            {
+                var newItem = new BizFlow.Abstractions.Model.PipelineItem();
+                newItem.TypeOperationId = item.TypeOperationId;
+                newItem.Description = item.Description;
+                newItem.SortOrder = item.SortOrder;
+
+                newPipeline.PipelineItems.Add(newItem);
+            }
+
+            pipelineRegistry.Create(newPipeline);
+
+            return Ok();
+        }
+
+        // DEBUG >
     }
 }
