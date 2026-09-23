@@ -44,26 +44,26 @@ namespace BizFlow.Core.Controllers
         /// Удаление пайплайна
         /// </summary>
         /// <returns>Результат выполнения операции</returns>
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BizFlowChangingResult))]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [Consumes("application/json")]
-        [HttpDelete("pipeline/{pipelineName}")]
-        public async Task<IActionResult> DeletePipeline([FromRoute] string pipelineName,
-            [FromServices] IDeletePipelineHandler deletePipelineHandler)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BizFlowChangingResult))]
+        //[ProducesResponseType(StatusCodes.Status204NoContent)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[Consumes("application/json")]
+        //[HttpDelete("pipeline/{pipelineName}")]
+        //public async Task<IActionResult> DeletePipeline([FromRoute] string pipelineName,
+        //    [FromServices] IDeletePipelineHandler deletePipelineHandler)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
 
-            var result = await deletePipelineHandler.DeletePipelineAsync(new DeletePipelineCommand()
-            {
-                Name = pipelineName,
-            });
+        //    var result = await deletePipelineHandler.DeletePipelineAsync(new DeletePipelineCommand()
+        //    {
+        //        Name = pipelineName,
+        //    });
 
-            return Ok(result);
-        }
+        //    return Ok(result);
+        //}
 
         /// <summary>
         /// Получает постраничный список записей журнала выполнения пайплайнов
@@ -243,6 +243,23 @@ namespace BizFlow.Core.Controllers
             pipelineRegistry.Create(newPipeline);
 
             return Ok();
+        }
+
+
+        /// <summary>
+        /// Отладка механизма удаления пайплайна
+        /// </summary>
+        /// <returns>Результат выполнения операции</returns>
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(BizFlowChangingResult))]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [Consumes("application/json")]
+        [HttpDelete("pipeline/remove/{pipelineName}")]
+        public async Task<IActionResult> DeletePipelineTest([FromRoute] string pipelineName,
+            [FromServices] IPipelineRegistry pipelineRegistry)
+        {
+            var result = pipelineRegistry.Remove(pipelineName);
+            return Ok(result);
         }
 
         // DEBUG >

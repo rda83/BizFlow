@@ -64,10 +64,14 @@ namespace BizFlow.Extensions.DependencyInjection
             services.AddScoped<PipelineExecutor>();
 
 
-            services.AddSingleton<BizFlowScheduler>();
+            //services.AddSingleton<BizFlowScheduler>();
+            //services.AddHostedService<BizFlowScheduler>(sp => sp.GetRequiredService<BizFlowScheduler>());
+
+            services.AddBizFlowCore();
+
+
             services.AddSingleton<ICancellationService>(sp => sp.GetRequiredService<BizFlowScheduler>());
-            services.AddHostedService<BizFlowScheduler>(sp => sp.GetRequiredService<BizFlowScheduler>());
-            
+
             return services;
         }
     }

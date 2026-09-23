@@ -3,7 +3,6 @@ using BizFlow.Abstractions.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
 
 namespace BizFlow.Core
 {
@@ -11,28 +10,22 @@ namespace BizFlow.Core
     {
         private const int DEFAULT_DELAY_INTERVAL_SECONDS = 1;
 
-        // FOR DEBUG
-        private bool tik = true;
-
+        private readonly PipelineStateService _pipelineStateService;
         private readonly ITimeProvider _timeProvider;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IPipelineRegistry _pipelineRegistry;
         private readonly ILogger<BizFlowScheduler> _logger;
 
-        private readonly ConcurrentDictionary<string, DateTimeOffset?> _lastRunTimes = new();
-        private readonly ConcurrentDictionary<string, bool> _runningStates = new();
-        private readonly ConcurrentDictionary<string, DateTimeOffset?> _nextRunTimes = new();
-
-        private readonly ConcurrentDictionary<string, CancellationTokenSource> _runningTokenSources = new();
-
         private readonly SemaphoreSlim _wakeSignal = new SemaphoreSlim(0, 1);
 
         public BizFlowScheduler(
+            PipelineStateService pipelineStateService,
             IPipelineRegistry pipelineRegistry,
             IServiceScopeFactory scopeFactory,
             ILogger<BizFlowScheduler> logger,
             ITimeProvider timeProvider)
         {
+            _pipelineStateService = pipelineStateService;
             _pipelineRegistry = pipelineRegistry;
             _timeProvider = timeProvider;
             _scopeFactory = scopeFactory;
@@ -44,32 +37,23 @@ namespace BizFlow.Core
 
         private void OnJobAdded(object? sender, Pipeline pipelineDef)
         {
-            _lastRunTimes.TryAdd(pipelineDef.Name, null);
-            _runningStates.TryAdd(pipelineDef.Name, false);
-            _nextRunTimes.TryAdd(pipelineDef.Name, null);
-
+            _pipelineStateService.Add(pipelineDef.Name);
             _wakeSignal.Release();
-
             _logger.LogInformation($"BizFlowScheduler: Added a new pipeline: {pipelineDef.Name}.");
         }
 
         private void OnJobRemoved(object? sender, string pipelineName)
         {
-            _lastRunTimes.TryRemove(pipelineName, out _);
-            _runningStates.TryRemove(pipelineName, out _);
+            _pipelineStateService.Remove(pipelineName);
+            _logger.LogInformation($"BizFlowScheduler: Removed a pipeline: {pipelineName}.");
         }
 
         protected override async Task ExecuteAsync(CancellationToken appStoppingToken)
         {
-            //var now = _timeProvider.UtcNow;
-            foreach (var jobDef in _pipelineRegistry.GetAll())
+            foreach (var pipelineDef in _pipelineRegistry.GetAll())
             {
-                _lastRunTimes.TryAdd(jobDef.Name, null);
-                _runningStates.TryAdd(jobDef.Name, false);
-                _nextRunTimes.TryAdd(jobDef.Name, null);
+                _pipelineStateService.Add(pipelineDef.Name);
             }
-
-            //_logger.LogInformation("Scheduler started. Tasks registered: {Count}.", _jobDefinitions.Count());
 
             _logger.LogInformation("Scheduler started.");
 
@@ -78,9 +62,6 @@ namespace BizFlow.Core
 
             while (!appStoppingToken.IsCancellationRequested)
             {
-                _logger.LogInformation(tik ? "tik" : "tak");
-                tik = !tik;
-
                 var now = _timeProvider.UtcNow;
                 
                 foreach (var jobDef in _pipelineRegistry.GetAll())
@@ -89,23 +70,21 @@ namespace BizFlow.Core
 
                     if (appStoppingToken.IsCancellationRequested) break;
 
-                    if (_nextRunTimes[jobDef.Name] == null) // TODO: проверить существует ли ключ
+                    if (_pipelineStateService.GetNextRunTime(jobDef.Name) == null) // TODO: проверить существует ли ключ
                     {
-                        _nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
+                        _pipelineStateService.SetNextRunTime(jobDef.Name, 
+                            jobDef.Schedule.GetNextRun(_pipelineStateService.GetLastRunTime(jobDef.Name), now));
                     }
 
-                    DateTimeOffset? nextRun = _nextRunTimes[jobDef.Name];
+                    DateTimeOffset? jobRunTime = _pipelineStateService.GetNextRunTime(jobDef.Name);
 
-                    if (nextRun.HasValue && nextRun.Value <= now)
+                    if (jobRunTime.HasValue && jobRunTime.Value <= now)
                     {
-                        if (_runningStates[jobDef.Name]) // TODO: проверить существует ли ключ
+                        if (_pipelineStateService.IsRunning(jobDef.Name)) // TODO: проверить существует ли ключ
                         {
                             _logger.LogWarning("Task '{JobName}' is still running – execution skipped.", jobDef.Name);
                             continue;
                         }
-
-                        _runningStates[jobDef.Name] = true;
-                        _lastRunTimes[jobDef.Name] = now;
 
                         // TODO: сейчас считаем от now - вычесленного до запуска задачи.
                         // Если задача выполняется очень долго, к моменту её завершения это время может уже пройти.
@@ -121,9 +100,9 @@ namespace BizFlow.Core
                         // TODO: Если Schedule.GetNextRun - возвращает null
                         // далее на каждой итерации будет так же получать null, IntervalDelay падает в дефолтную секунду
                         // возможно такие задачи необходимо как то отмечать.
-                        _nextRunTimes[jobDef.Name] = jobDef.Schedule.GetNextRun(_lastRunTimes[jobDef.Name], now);
 
-                        _ = ExecuteJobAsync(jobDef, appStoppingToken);
+                        var nextRun = jobDef.Schedule.GetNextRun(now, now);
+                        _ = ExecuteJobAsync(jobDef, now, nextRun, appStoppingToken);
                     }
                 }
                 await IntervalDelay(appStoppingToken);
@@ -135,9 +114,9 @@ namespace BizFlow.Core
         {
             TimeSpan delay = TimeSpan.FromSeconds(DEFAULT_DELAY_INTERVAL_SECONDS);
 
-            var nextRunTimesSnapshot = _nextRunTimes.Values.ToList();
+            var nextRunTimesSnapshot = _pipelineStateService.GetAllNextRunTimes();
 
-            if (nextRunTimesSnapshot.Count != 0 && !nextRunTimesSnapshot.Where(i => i == null).Any())
+            if (nextRunTimesSnapshot.Count() != 0 && !nextRunTimesSnapshot.Where(i => i == null).Any())
             {
                 var nextRun = nextRunTimesSnapshot.OrderBy(i => i).FirstOrDefault();
                 delay = (nextRun! - _timeProvider.UtcNow).Value;
@@ -158,10 +137,12 @@ namespace BizFlow.Core
             linkedCts.Cancel();
         }
 
-        private async Task ExecuteJobAsync(Pipeline pipeline, CancellationToken appStoppingToken)
+        private async Task ExecuteJobAsync(Pipeline pipeline, DateTimeOffset? now, DateTimeOffset? nextRun,
+            CancellationToken appStoppingToken)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(appStoppingToken);
-            _runningTokenSources.TryAdd(pipeline.Name, cts);
+
+            _pipelineStateService.MarkStarted(pipeline.Name, now, nextRun, cts);
 
             try
             {
@@ -186,22 +167,14 @@ namespace BizFlow.Core
             finally
             {
                 // TODO: Если пока выполнялась задача - она была удалена
-                _runningStates[pipeline.Name] = false;
-                _runningTokenSources.TryRemove(pipeline.Name, out _);
+                _pipelineStateService.MarkCompleted(pipeline.Name);
             }
         }
 
-        public bool Cancel(string pipelineName)
+        public void Cancel(string pipelineName)
         {
             _logger.LogInformation($"Cancel pipeline: {pipelineName}");
-
-            if (_runningTokenSources.TryGetValue(pipelineName, out var cts))
-            {
-                cts.Cancel();
-                return true;
-            }
-
-            return false;
+            _pipelineStateService.Cancel(pipelineName);
         }
     }
 }
