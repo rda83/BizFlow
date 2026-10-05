@@ -228,7 +228,7 @@ namespace BizFlow.Core.Controllers
 
             newPipeline.Name = command.Name;
             newPipeline.Description = command.Description;
-            newPipeline.Schedule = new IntervalSchedule(TimeSpan.FromSeconds(30)); // Только на время отладки
+            newPipeline.Schedule = new IntervalSchedule(TimeSpan.FromSeconds(15)); // Только на время отладки
 
             foreach (var item in command.PipelineItems)
             {

@@ -37,55 +37,81 @@ namespace BizFlow.Core
 
         private void OnJobAdded(object? sender, Pipeline pipelineDef)
         {
-            _pipelineStateService.Add(pipelineDef.Name);
             _wakeSignal.Release();
             _logger.LogInformation($"BizFlowScheduler: Added a new pipeline: {pipelineDef.Name}.");
         }
 
         private void OnJobRemoved(object? sender, string pipelineName)
         {
-            _pipelineStateService.Remove(pipelineName);
             _logger.LogInformation($"BizFlowScheduler: Removed a pipeline: {pipelineName}.");
         }
 
         protected override async Task ExecuteAsync(CancellationToken appStoppingToken)
         {
-            foreach (var pipelineDef in _pipelineRegistry.GetAll())
-            {
-                _pipelineStateService.Add(pipelineDef.Name);
-            }
-
             _logger.LogInformation("Scheduler started.");
-
-            //TODO: можно явно завернуть цикл в try-catch (OperationCanceledException)
-            // и залогировать «Scheduler stopped by cancellation».
 
             while (!appStoppingToken.IsCancellationRequested)
             {
                 var now = _timeProvider.UtcNow;
-                
-                foreach (var jobDef in _pipelineRegistry.GetAll())
-                {
-                    _logger.LogInformation("EXECUTE");
+                _logger.LogInformation(" #### ExecuteAsync #### Получено текущее время {now}", now);
 
+                var pipelines = _pipelineRegistry.GetAll();
+
+                _logger.LogInformation(" #### ExecuteAsync #### Получен список операций {Count}", pipelines.Count);
+
+                int current = 0;
+                foreach (var pipeline in pipelines)
+                {
                     if (appStoppingToken.IsCancellationRequested) break;
 
-                    if (_pipelineStateService.GetNextRunTime(jobDef.Name) == null) // TODO: проверить существует ли ключ
+                    current++;
+                    _logger.LogInformation(" #### ExecuteAsync #### Начало обработки элемента {current} {Name}", current, pipeline.Name);
+
+                    if (!_pipelineStateService.TrySetInProgress(pipeline.Name))
                     {
-                        _pipelineStateService.SetNextRunTime(jobDef.Name, 
-                            jobDef.Schedule.GetNextRun(_pipelineStateService.GetLastRunTime(jobDef.Name), now));
+                        _logger.LogInformation(" #### ExecuteAsync #### Пропуск выполнения {Name}", pipeline.Name); // Нужно придумать сообщение
+                        continue;
                     }
 
-                    DateTimeOffset? jobRunTime = _pipelineStateService.GetNextRunTime(jobDef.Name);
+                    //_logger.LogInformation("EXECUTE"); // Нужно придумать сообщение
 
-                    if (jobRunTime.HasValue && jobRunTime.Value <= now)
+
+                    var nextRunTime = _pipelineStateService.GetNextRunTime(pipeline.Name);
+
+                    _logger.LogInformation(" #### ExecuteAsync #### Получено время запуска {Name} {Time}", pipeline.Name, nextRunTime);
+
+                    if (nextRunTime == null)
                     {
-                        if (_pipelineStateService.IsRunning(jobDef.Name)) // TODO: проверить существует ли ключ
+                        // Ситуация ошибочная, т.е. между установкой статуса выполнения и получением времени, состояние исчезло
+                        // а такого быть не должно, нужно фиксировать в логе.
+                        continue;
+                    }
+                  
+                    if (nextRunTime == new DateTimeOffset(DateTime.MinValue.ToUniversalTime())) 
+                    {
+                        var lastRunTime = _pipelineStateService.GetLastRunTime(pipeline.Name);
+                        if (lastRunTime == null)
                         {
-                            _logger.LogWarning("Task '{JobName}' is still running – execution skipped.", jobDef.Name);
+                            // Ситуация ошибочная, т.е. между установкой статуса выполнения и получением времени, состояние исчезло
+                            // а такого быть не должно, нужно фиксировать в логе.
                             continue;
                         }
 
+                        // lastRunTime - может иметь значение DateTime.MinValue - нужно проверить как к этому относится pipeline.Schedule
+                        var claculatedNextRun = pipeline.Schedule.GetNextRun(lastRunTime, now);
+
+                        if(!_pipelineStateService.TrySetNextRunTime(pipeline.Name, claculatedNextRun))
+                        {
+                            // Ситуация аналогичная, если мы тут то что то сильно пошло не так
+                            continue;
+                        }
+                        nextRunTime = claculatedNextRun;
+
+                        _logger.LogInformation(" #### ExecuteAsync #### Вычислено время запуска {Name} {Time}", pipeline.Name, nextRunTime);
+                    }
+
+                    if (nextRunTime.HasValue && nextRunTime.Value <= now)
+                    {
                         // TODO: сейчас считаем от now - вычесленного до запуска задачи.
                         // Если задача выполняется очень долго, к моменту её завершения это время может уже пройти.
                         // Какие есть варианты:
@@ -101,8 +127,29 @@ namespace BizFlow.Core
                         // далее на каждой итерации будет так же получать null, IntervalDelay падает в дефолтную секунду
                         // возможно такие задачи необходимо как то отмечать.
 
-                        var nextRun = jobDef.Schedule.GetNextRun(now, now);
-                        _ = ExecuteJobAsync(jobDef, now, nextRun, appStoppingToken);
+                        _logger.LogInformation(" #### ExecuteAsync #### Сработали условия выполнения {Name}", pipeline.Name);
+
+                        var calculateNextRun = pipeline.Schedule.GetNextRun(now, now);
+
+                        _logger.LogInformation(" #### ExecuteAsync #### Вычислено время следующего запуска {Name} {Time}", pipeline.Name, calculateNextRun);
+
+                        _ = ExecuteJobAsync(pipeline, now, calculateNextRun, appStoppingToken);
+                    }
+                    else
+                    {
+                        // Тут просто условия запуска не сработали, и нам надо сбросить флаг того что операция выполняется
+                        _logger.LogInformation(" #### ExecuteAsync #### Несработали условия выполнения {Name}", pipeline.Name);
+
+
+                        if (_pipelineStateService.TrySetWaiting(pipeline.Name))
+                        {
+                            _logger.LogInformation(" #### ExecuteAsync #### Сброшен флаг выполнения {Name}", pipeline.Name);
+                        }
+                        else
+                        {
+                            _logger.LogInformation(" #### ExecuteAsync #### Ошибка сброса флага выполнения выполнения {Name}", pipeline.Name);
+                        }
+                            continue;
                     }
                 }
                 await IntervalDelay(appStoppingToken);
@@ -119,6 +166,9 @@ namespace BizFlow.Core
             if (nextRunTimesSnapshot.Count() != 0 && !nextRunTimesSnapshot.Where(i => i == null).Any())
             {
                 var nextRun = nextRunTimesSnapshot.OrderBy(i => i).FirstOrDefault();
+
+                _logger.LogInformation(" #### IntervalDelay #### Следующая итерация {nextRun}", nextRun);
+
                 delay = (nextRun! - _timeProvider.UtcNow).Value;
 
                 if (delay < TimeSpan.Zero)
@@ -126,6 +176,8 @@ namespace BizFlow.Core
                     delay = TimeSpan.FromSeconds(DEFAULT_DELAY_INTERVAL_SECONDS);
                 }
             }
+
+            _logger.LogInformation(" #### IntervalDelay #### Следующая итерация {delay}", delay);
 
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(appStoppingToken);
                 
@@ -137,16 +189,21 @@ namespace BizFlow.Core
             linkedCts.Cancel();
         }
 
-        private async Task ExecuteJobAsync(Pipeline pipeline, DateTimeOffset? now, DateTimeOffset? nextRun,
+        private async Task ExecuteJobAsync(Pipeline pipeline, DateTimeOffset? now, DateTimeOffset? calculateNextRun,
             CancellationToken appStoppingToken)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(appStoppingToken);
-
-            _pipelineStateService.MarkStarted(pipeline.Name, now, nextRun, cts);
+           
+            if(!_pipelineStateService.TrySetBeforeStartedAttributes(pipeline.Name, now, calculateNextRun, cts))
+            {
+                // Здесь мы оказаться не  должны, нужно тоже что то делать
+            }
 
             try
             {
-                _logger.LogInformation("Task '{JobName}' started execution.", pipeline.Name);
+                //_logger.LogInformation("Task '{JobName}' started execution.", pipeline.Name);
+
+                _logger.LogInformation(" #### ExecuteJobAsync #### ЗАПУСК {Name}", pipeline.Name);
 
                 using (var scope = _scopeFactory.CreateScope())
                 {
@@ -154,27 +211,38 @@ namespace BizFlow.Core
                     await executor.Execute(pipeline, cts.Token);
                 }
 
-                _logger.LogInformation("Task '{JobName}' completed successfully.", pipeline.Name);
+                _logger.LogInformation(" #### ExecuteJobAsync #### ЗАВЕРШЕНИЕ {Name}", pipeline.Name);
+
+                //_logger.LogInformation("Task '{JobName}' completed successfully.", pipeline.Name);
             }
             catch (OperationCanceledException)
             {
-                _logger.LogInformation("Task '{JobName}' cancelled.", pipeline.Name);
+                //_logger.LogInformation("Task '{JobName}' cancelled.", pipeline.Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Task '{JobName}' failed with an error.", pipeline.Name);
+                //_logger.LogError(ex, "Task '{JobName}' failed with an error.", pipeline.Name);
             }
             finally
             {
-                // TODO: Если пока выполнялась задача - она была удалена
-                _pipelineStateService.MarkCompleted(pipeline.Name);
+                _logger.LogInformation(" #### ExecuteJobAsync #### TryMarkCompleted < {Name}", pipeline.Name);
+
+                if (!_pipelineStateService.TryMarkCompleted(pipeline.Name))
+                {
+                    // Нужно подумать что делаем в этом месте
+
+                    _logger.LogInformation(" #### ExecuteJobAsync #### TryMarkCompleted ERROR {Name}", pipeline.Name);
+
+                }
+
+                _logger.LogInformation(" #### ExecuteJobAsync #### TryMarkCompleted > {Name}", pipeline.Name);
             }
         }
 
-        public void Cancel(string pipelineName)
+        public bool Cancel(string pipelineName)
         {
             _logger.LogInformation($"Cancel pipeline: {pipelineName}");
-            _pipelineStateService.Cancel(pipelineName);
+            return _pipelineStateService.TryCancel(pipelineName);
         }
     }
 }
