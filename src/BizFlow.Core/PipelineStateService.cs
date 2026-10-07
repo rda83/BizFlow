@@ -5,9 +5,6 @@ namespace BizFlow.Core
 {
     public class PipelineStateService
     {
-        private readonly object _lock = new object();
-        private readonly ConcurrentDictionary<string, PipelineRuntimeState> _states = new();
-
         public bool TryAdd(string pipelineName)
         {
             bool result = false;
@@ -21,6 +18,7 @@ namespace BizFlow.Core
             }
             return result;
         }
+
         public bool TrySetInProgress(string pipelineName)
         {
             if (!_states.TryGetValue(pipelineName, out var state))
@@ -30,24 +28,21 @@ namespace BizFlow.Core
 
             lock (state.LockObject)
             {
-                if (_states.ContainsKey(pipelineName))
-                {
-                    if (state.CurrentState == PipelineState.Waiting)
-                    {
-                        state.CurrentState = PipelineState.InProgress;
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return false;
                 }
+
+                if (state.CurrentState == PipelineState.Waiting)
+                {
+                    state.RunningCTS = null;
+                    state.CurrentState = PipelineState.InProgress;
+                    return true;
+                }
+                return false;
             }
         }
+
         public bool TrySetWaiting(string pipelineName)
         {
             if (!_states.TryGetValue(pipelineName, out var state))
@@ -57,24 +52,21 @@ namespace BizFlow.Core
 
             lock (state.LockObject)
             {
-                if (_states.ContainsKey(pipelineName))
-                {
-                    if (state.CurrentState == PipelineState.InProgress)
-                    {
-                        state.CurrentState = PipelineState.Waiting;
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-                else
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return false;
                 }
+
+                if (state.CurrentState == PipelineState.InProgress)
+                {
+                    state.CurrentState = PipelineState.Waiting;
+                    state.RunningCTS = null;
+                    return true;
+                }
+                return false;
             }
         }
+
         public bool TryRemove(string pipelineName)
         {
             if (!_states.TryGetValue(pipelineName, out var state))
@@ -84,21 +76,22 @@ namespace BizFlow.Core
 
             lock (state.LockObject)
             {
-                if (_states.ContainsKey(pipelineName))
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
-                    if (state.CurrentState == PipelineState.Waiting)
+                    return false;
+                }
+
+                if (state.CurrentState == PipelineState.Waiting)
+                {
+                    if (_states.TryRemove(pipelineName, out _))
                     {
-                        if(_states.TryRemove(pipelineName, out _))
-                        {
-                            return true;
-                        }
+                        return true;
                     }
                 }
-            }
 
+            }
             return false;
         }
-
 
         public DateTimeOffset? GetNextRunTime(string pipelineName)
         {
@@ -109,14 +102,14 @@ namespace BizFlow.Core
 
             lock (state.LockObject)
             {
-                if (!_states.ContainsKey(pipelineName))
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return null;
                 }
-
                 return state.NextRunTime;
             }
         }
+
         public DateTimeOffset? GetLastRunTime(string pipelineName)
         {
             if (!_states.TryGetValue(pipelineName, out var state))
@@ -125,13 +118,15 @@ namespace BizFlow.Core
             }
             lock (state.LockObject)
             {
-                if (!_states.ContainsKey(pipelineName))
+
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return null;
                 }
                 return state.LastRunTime;
             }
         }
+
         public bool TrySetNextRunTime(string pipelineName, DateTimeOffset? nextRunTime)
         {
             if (!_states.TryGetValue(pipelineName, out var state))
@@ -141,13 +136,13 @@ namespace BizFlow.Core
 
             lock (state.LockObject)
             {
-                if (!_states.ContainsKey(pipelineName))
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return false;
                 }
                 state.NextRunTime = nextRunTime;
             }
-            return true;    
+            return true;
         }
 
         public bool TrySetBeforeStartedAttributes(string pipelineName, DateTimeOffset? now, DateTimeOffset? nextRun, CancellationTokenSource cts)
@@ -159,7 +154,7 @@ namespace BizFlow.Core
 
             lock (state.LockObject)
             {
-                if (!_states.ContainsKey(pipelineName))
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return false;
                 }
@@ -175,16 +170,17 @@ namespace BizFlow.Core
                 return true;
             }
         }
+
         public bool TryMarkCompleted(string pipelineName)
         {
             if (!_states.TryGetValue(pipelineName, out var state))
             {
                 return false;
             }
-           
+
             lock (state.LockObject)
             {
-                if (!_states.ContainsKey(pipelineName))
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return false;
                 }
@@ -207,9 +203,10 @@ namespace BizFlow.Core
                 return false;
             }
 
+            CancellationTokenSource? cts;
             lock (state.LockObject)
             {
-                if (!_states.ContainsKey(pipelineName))
+                if (!_states.TryGetValue(pipelineName, out var current) || !ReferenceEquals(current, state))
                 {
                     return false;
                 }
@@ -224,30 +221,51 @@ namespace BizFlow.Core
                     return false;
                 }
 
-                state.RunningCTS.Cancel();
+                cts = state.RunningCTS;
+
+                if (cts != null) 
+                {
+                    return false;
+                }
+            }
+
+            try
+            {
+                cts?.Cancel();
                 return true;
-            }       
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
         }
 
         public DateTimeOffset?[] GetAllNextRunTimes()
         {
-            return _states.Select(i => i.Value.NextRunTime).ToArray();
+            var snapshot = _states.ToArray();
+            var result = new DateTimeOffset?[snapshot.Length];
+
+            for (int i = 0; i < snapshot.Length; i++)
+            {
+                lock (snapshot[i].Value.LockObject)
+                {
+                    result[i] = snapshot[i].Value.NextRunTime;
+                }
+            }
+            return result;
         }
 
-
+        private readonly object _lock = new object();
+        private readonly ConcurrentDictionary<string, PipelineRuntimeState> _states = new();
         private sealed class PipelineRuntimeState
         {
             public object LockObject { get; } = new object();
             public DateTimeOffset? LastRunTime { get; set; }
-            
-            //public bool IsRunning { get; set; }
-
             public PipelineState CurrentState { get; set; } = PipelineState.Waiting;
 
             public DateTimeOffset? NextRunTime { get; set; }
             public CancellationTokenSource? RunningCTS { get; set; }
         }
-
         private enum PipelineState
         {
             Waiting,
