@@ -18,7 +18,7 @@ namespace BizFlow.Schedules.Interval
 
         public DateTimeOffset? GetNextRun(DateTimeOffset? lastRun, DateTimeOffset now)
         {
-            return lastRun == new DateTimeOffset(DateTime.MinValue.ToUniversalTime()) ? now : lastRun.Value.Add(Interval);
+            return lastRun == null ? now : lastRun.Value.Add(Interval);
         }
     }
 }

@@ -79,31 +79,15 @@ namespace BizFlow.Core
                     var nextRunTime = _pipelineStateService.GetNextRunTime(pipeline.Name);
 
                     _logger.LogInformation(" #### ExecuteAsync #### Получено время запуска {Name} {Time}", pipeline.Name, nextRunTime);
-
-                    if (nextRunTime == null)
-                    {
-                        // Ситуация ошибочная, т.е. между установкой статуса выполнения и получением времени, состояние исчезло
-                        // а такого быть не должно, нужно фиксировать в логе.
-                        continue;
-                    }
                   
-                    if (nextRunTime == new DateTimeOffset(DateTime.MinValue.ToUniversalTime())) 
+                    if (nextRunTime == null) 
                     {
                         var lastRunTime = _pipelineStateService.GetLastRunTime(pipeline.Name);
-                        if (lastRunTime == null)
-                        {
-                            // Ситуация ошибочная, т.е. между установкой статуса выполнения и получением времени, состояние исчезло
-                            // а такого быть не должно, нужно фиксировать в логе.
-                            continue;
-                        }
-
-                        // lastRunTime - может иметь значение DateTime.MinValue - нужно проверить как к этому относится pipeline.Schedule
                         var claculatedNextRun = pipeline.Schedule.GetNextRun(lastRunTime, now);
 
                         if(!_pipelineStateService.TrySetNextRunTime(pipeline.Name, claculatedNextRun))
                         {
-                            // Ситуация аналогичная, если мы тут то что то сильно пошло не так
-                            continue;
+                            continue;  // Ситуация аналогичная, если мы тут то что то сильно пошло не так
                         }
                         nextRunTime = claculatedNextRun;
 

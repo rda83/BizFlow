@@ -11,8 +11,8 @@ namespace BizFlow.Core
             lock (_lock)
             {
                 var newState = new PipelineRuntimeState();
-                newState.NextRunTime = new DateTimeOffset(DateTime.MinValue.ToUniversalTime());
-                newState.LastRunTime = new DateTimeOffset(DateTime.MinValue.ToUniversalTime());
+                newState.NextRunTime = null;
+                newState.LastRunTime = null;
 
                 result = _states.TryAdd(pipelineName, newState);
             }
@@ -222,8 +222,7 @@ namespace BizFlow.Core
                 }
 
                 cts = state.RunningCTS;
-
-                if (cts != null) 
+                if (cts == null) 
                 {
                     return false;
                 }

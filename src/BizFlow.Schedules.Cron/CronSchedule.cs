@@ -16,7 +16,7 @@ namespace BizFlow.Schedules.Cron
 
         public DateTimeOffset? GetNextRun(DateTimeOffset? lastRun, DateTimeOffset now)
         {
-            if (lastRun == new DateTimeOffset(DateTime.MinValue.ToUniversalTime()))
+            if (lastRun == null)
             {
                 return _expression.GetNextOccurrence(now, _timeZone);
             }
