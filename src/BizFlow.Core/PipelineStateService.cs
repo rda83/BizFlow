@@ -239,18 +239,16 @@ namespace BizFlow.Core
             }
         }
 
-        public DateTimeOffset?[] GetAllNextRunTimes()
+        public DateTimeOffset[] GetWaitingItemsNextNotNullRunTimes()
         {
             var snapshot = _states.ToArray();
-            var result = new DateTimeOffset?[snapshot.Length];
 
-            for (int i = 0; i < snapshot.Length; i++)
-            {
-                lock (snapshot[i].Value.LockObject)
-                {
-                    result[i] = snapshot[i].Value.NextRunTime;
-                }
-            }
+            var result = snapshot
+                .Where(i => i.Value.CurrentState == PipelineState.Waiting)
+                .Where(i => i.Value.NextRunTime != null)
+                .Select(i => i.Value.NextRunTime!.Value)
+                .ToArray();
+
             return result;
         }
 
