@@ -299,7 +299,6 @@ namespace BizFlow.Core
             _wakeSignal.Dispose();
         }
 
-
         public bool Cancel(string pipelineName)
         {
             _logger.LogInformation($"Cancel pipeline: {pipelineName}");
