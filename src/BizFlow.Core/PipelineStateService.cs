@@ -1,6 +1,9 @@
 ﻿
 using System.Collections.Concurrent;
 
+// Логирование + сообщения при исключениях + XML документация
+// DefaultPipelineRegistry, PipelineStateService, BizFlowScheduler
+
 namespace BizFlow.Core
 {
     public class PipelineStateService
