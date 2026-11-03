@@ -5,15 +5,24 @@ using Microsoft.Extensions.Logging;
 
 namespace BizFlow.ExecutionJournal.Logger
 {
+    /// <summary>
+    /// An implementation of <see cref="IExecutionJournal"/> that writes pipeline execution events 
+    /// to the standard <see cref="ILogger"/> infrastructure using structured logging.
+    /// </summary>
     public class ExecutionJournalLogger : IExecutionJournal
     {
         private readonly ILogger<ExecutionJournalLogger> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExecutionJournalLogger"/> class.
+        /// </summary>
+        /// <param name="logger">The logger used to output execution events.</param>
         public ExecutionJournalLogger(ILogger<ExecutionJournalLogger> logger)
         {
             _logger = logger;
         }
 
+        /// <inheritdoc/>
         public Task AddBlockedPipelineAsync(string launchId, bool isStartNowPipeline, string pipelineName)
         {
             var msg = """
@@ -39,6 +48,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public Task AddBlockedPipelineItemAsync(string launchId, Pipeline pipeline, PipelineItem pipelineItem)
         {
             var msg = """
@@ -64,6 +74,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public Task AddCancelledPipelineAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline)
         {
             var msg = """
@@ -89,6 +100,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public Task AddCancelledPipelineItemAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
             var msg = """
@@ -114,6 +126,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public Task AddErrorAsync(string launchId, bool isStartNowPipeline, string msg)
         {
             var msgText = """
@@ -140,6 +153,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public Task AddErrorAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem, string msg)
         {
             var msgText = """
@@ -165,6 +179,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public Task AddStartAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
             var msg = """
@@ -190,6 +205,7 @@ namespace BizFlow.ExecutionJournal.Logger
             return Task.CompletedTask;
         }
 
+        /// <inheritdoc/>
         public Task AddSuccessAsync(string launchId, bool isStartNowPipeline, Pipeline pipeline, PipelineItem pipelineItem)
         {
             var msg = """
