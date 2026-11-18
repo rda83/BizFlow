@@ -1,6 +1,6 @@
 ﻿using BizFlow.Abstractions;
 using BizFlow.Core.Contracts;
-using BizFlow.Core.Controllers;
+//using BizFlow.Core.Controllers;
 using BizFlow.Core.Internal.Features.AddPipeline;
 using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
@@ -8,7 +8,6 @@ using BizFlow.Core.Internal.Features.StartNowPipeline;
 using BizFlow.Core.Internal.Features.StatusPipeline;
 using BizFlow.Core.Internal.Jobs;
 using BizFlow.Core.Internal.Shared;
-using BizFlow.Core.Model;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -62,13 +61,8 @@ namespace BizFlow.Core.Services.DI
 
             services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
-            var assembly = typeof(BizFlowController).GetTypeInfo().Assembly;
-
-            services.AddMvcCore()
-                .AddApplicationPart(assembly);
             services.AddScoped<BizFlowJobManager>();
-            //services.AddScoped<DEL_CancellationMonitorService>();
-            //services.AddScoped<DEL_PipelineExecutorJournal>();
+
             
             services.AddScoped<IAddPipelineHandler, AddPipelineHandler>();
             services.AddScoped<IDeletePipelineHandler, DeletePipelineHandler>();
