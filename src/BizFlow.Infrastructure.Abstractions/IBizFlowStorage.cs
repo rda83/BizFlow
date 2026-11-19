@@ -1,7 +1,7 @@
 ﻿using BizFlow.Abstractions.Model;
 using BizFlow.Core.Model;
 
-namespace BizFlow.Core.Contracts.Storage
+namespace BizFlow.Infrastructure.Abstractions
 {
     public interface IBizFlowStorage : IDisposable
     {

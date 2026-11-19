@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BizFlow.Core\BizFlow.Core.csproj" />
+    <ProjectReference Include="..\BizFlow.Infrastructure.Abstractions\BizFlow.Infrastructure.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

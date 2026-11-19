@@ -2,7 +2,7 @@
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
 
-namespace BizFlow.Core.Model
+namespace BizFlow.Abstractions.Model
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TypeBizFlowJournalAction

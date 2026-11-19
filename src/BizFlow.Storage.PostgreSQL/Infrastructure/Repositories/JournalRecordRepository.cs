@@ -75,7 +75,7 @@ namespace BizFlow.Storage.PostgreSQL.Infrastructure.Repositories
             var itemId = reader.GetInt64(reader.GetOrdinal("item_id"));
             var itemDescription = reader.GetStringOrNull("item_description");
             var itemSortOrder = reader.GetInt32(reader.GetOrdinal("item_sort_order"));
-            var typeAction = reader.GetEnumValue<Core.Model.TypeBizFlowJournalAction>("type_action");   
+            var typeAction = reader.GetEnumValue<Abstractions.Model.TypeBizFlowJournalAction>("type_action");   
             var typeOperationId = reader.GetStringOrNull("type_operation_id");
             var launchId = reader.GetStringOrNull("launch_id");
             var message = reader.GetStringOrNull("message");

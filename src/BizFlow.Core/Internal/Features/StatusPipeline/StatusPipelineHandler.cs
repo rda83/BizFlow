@@ -1,106 +1,108 @@
-﻿using BizFlow.Core.Contracts.Storage;
+﻿//using BizFlow.Core.Contracts.Storage;
 using BizFlow.Core.Model;
 
 namespace BizFlow.Core.Internal.Features.StatusPipeline
 {
     public class StatusPipelineHandler : IStatusPipelineHandler
     {
-        private readonly IBizFlowStorage _storage;
+        //private readonly IBizFlowStorage _storage;
 
-        private static readonly HashSet<TypeBizFlowJournalAction> _startStatuses = new()
-        {
-            TypeBizFlowJournalAction.Start
-        };
+        //private static readonly HashSet<TypeBizFlowJournalAction> _startStatuses = new()
+        //{
+        //    TypeBizFlowJournalAction.Start
+        //};
 
-        private static readonly HashSet<TypeBizFlowJournalAction> _finishedStatuses = new()
-        {
-            TypeBizFlowJournalAction.Success,
-            TypeBizFlowJournalAction.Error
-        };
+        //private static readonly HashSet<TypeBizFlowJournalAction> _finishedStatuses = new()
+        //{
+        //    TypeBizFlowJournalAction.Success,
+        //    TypeBizFlowJournalAction.Error
+        //};
 
-        private static readonly HashSet<TypeBizFlowJournalAction> _successStatuses = new()
-        {
-            TypeBizFlowJournalAction.Success
-        };
+        //private static readonly HashSet<TypeBizFlowJournalAction> _successStatuses = new()
+        //{
+        //    TypeBizFlowJournalAction.Success
+        //};
 
-        public StatusPipelineHandler(IBizFlowStorage storage)
-        {
-            _storage = storage;
-        }
+        //public StatusPipelineHandler(IBizFlowStorage storage)
+        //{
+        //    _storage = storage;
+        //}
         public async Task<StatusPipelineResult> StatusPipeline(StatusPipelineCommand command,
             CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(command);
-            ArgumentException.ThrowIfNullOrWhiteSpace(command.Name);
+            throw new NotImplementedException();
 
-            var pipeLine = await _storage.GetPipelineAsync(command.Name, cancellationToken);
-            if (pipeLine == null)
-                throw new InvalidOperationException($"Pipeline '{command.Name}' not found");
+            //ArgumentNullException.ThrowIfNull(command);
+            //ArgumentException.ThrowIfNullOrWhiteSpace(command.Name);
 
-            var pipelineItems = pipeLine.PipelineItems
-                .OrderBy(i => i.SortOrder)
-                .ToList();
+            //var pipeLine = await _storage.GetPipelineAsync(command.Name, cancellationToken);
+            //if (pipeLine == null)
+            //    throw new InvalidOperationException($"Pipeline '{command.Name}' not found");
 
-            IEnumerable<JournalRecord> journalRecords = [];
-            var launchId = await _storage.GetLastLaunchIdAsync(command.Name);
-            if (!string.IsNullOrEmpty(launchId))
-            {
-                journalRecords = await _storage.GetJournalRecordByLaunchIdAsync(launchId);
-            }
-            journalRecords ??= [];
+            //var pipelineItems = pipeLine.PipelineItems
+            //    .OrderBy(i => i.SortOrder)
+            //    .ToList();
+
+            //IEnumerable<JournalRecord> journalRecords = [];
+            //var launchId = await _storage.GetLastLaunchIdAsync(command.Name);
+            //if (!string.IsNullOrEmpty(launchId))
+            //{
+            //    journalRecords = await _storage.GetJournalRecordByLaunchIdAsync(launchId);
+            //}
+            //journalRecords ??= [];
             
-            var result = new StatusPipelineResult()
-            {
-                PipelineName = pipeLine.Name,
-                Description = pipeLine.Description,
-                //CronExpression = pipeLine.CronExpression,
-            };
+            //var result = new StatusPipelineResult()
+            //{
+            //    PipelineName = pipeLine.Name,
+            //    Description = pipeLine.Description,
+            //    //CronExpression = pipeLine.CronExpression,
+            //};
 
-            var firstAction = journalRecords.FirstOrDefault();
-            if (firstAction != null)
-            {
-                result.IsStartNowPipeline = firstAction.IsStartNow;
-            }
+            //var firstAction = journalRecords.FirstOrDefault();
+            //if (firstAction != null)
+            //{
+            //    result.IsStartNowPipeline = firstAction.IsStartNow;
+            //}
 
-            foreach (var item in pipelineItems)
-            {
-                var itemActions = journalRecords.Where(i => i.ItemId == item.Id).ToList();
-                var startAction = itemActions.Where(action => _startStatuses.Contains(action.TypeAction)).FirstOrDefault();
-                var finishedAction = itemActions.Where(action => _finishedStatuses.Contains(action.TypeAction)).FirstOrDefault();
-                var lastAction = itemActions.OrderByDescending(action => action.Period).FirstOrDefault();
+            //foreach (var item in pipelineItems)
+            //{
+            //    var itemActions = journalRecords.Where(i => i.ItemId == item.Id).ToList();
+            //    var startAction = itemActions.Where(action => _startStatuses.Contains(action.TypeAction)).FirstOrDefault();
+            //    var finishedAction = itemActions.Where(action => _finishedStatuses.Contains(action.TypeAction)).FirstOrDefault();
+            //    var lastAction = itemActions.OrderByDescending(action => action.Period).FirstOrDefault();
 
-                var existStartStatus = startAction != null;
-                var existFinishedStatus = finishedAction != null;
-                var isSuccessFinishedStatus = finishedAction != null && _successStatuses.Contains(finishedAction.TypeAction);
+            //    var existStartStatus = startAction != null;
+            //    var existFinishedStatus = finishedAction != null;
+            //    var isSuccessFinishedStatus = finishedAction != null && _successStatuses.Contains(finishedAction.TypeAction);
 
-                var statusItem = new StatusPipelineResultItem
-                {
-                    PipelineItemDescription = item.Description,
-                    SortOrder = item.SortOrder,
-                    TypeOperationId = item.TypeOperationId,
-                    Started = startAction?.Period,
-                    Finished = finishedAction?.Period,
-                    LastOperationAction = lastAction?.TypeAction.ToString(),
-                    Complete = existStartStatus && existFinishedStatus,
-                    Success = existStartStatus && isSuccessFinishedStatus,
-                    Messages = itemActions.OrderBy(action => action.Period)
-                        .Select(action => $"{action.TypeAction}: {action.Message}")
-                        .ToList(),
-                };
+            //    var statusItem = new StatusPipelineResultItem
+            //    {
+            //        PipelineItemDescription = item.Description,
+            //        SortOrder = item.SortOrder,
+            //        TypeOperationId = item.TypeOperationId,
+            //        Started = startAction?.Period,
+            //        Finished = finishedAction?.Period,
+            //        LastOperationAction = lastAction?.TypeAction.ToString(),
+            //        Complete = existStartStatus && existFinishedStatus,
+            //        Success = existStartStatus && isSuccessFinishedStatus,
+            //        Messages = itemActions.OrderBy(action => action.Period)
+            //            .Select(action => $"{action.TypeAction}: {action.Message}")
+            //            .ToList(),
+            //    };
 
-                result.Items.Add(statusItem);
-            }
+            //    result.Items.Add(statusItem);
+            //}
 
-            if (result.Items.Count == pipelineItems.Count && result.Items.All(i => i.Complete))
-            {
-                result.Complete = true;
-            }
+            //if (result.Items.Count == pipelineItems.Count && result.Items.All(i => i.Complete))
+            //{
+            //    result.Complete = true;
+            //}
 
-            if (result.Items.Count == pipelineItems.Count && result.Items.All(i => i.Success))
-            {
-                result.Success = true;
-            }
-            return result;
+            //if (result.Items.Count == pipelineItems.Count && result.Items.All(i => i.Success))
+            //{
+            //    result.Success = true;
+            //}
+            //return result;
         }
     }
 }
