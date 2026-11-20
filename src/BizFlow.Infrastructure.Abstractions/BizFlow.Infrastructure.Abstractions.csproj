@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BizFlow.Abstractions\BizFlow.Abstractions.csproj" />
-    <ProjectReference Include="..\BizFlow.Core\BizFlow.Core.csproj" />
   </ItemGroup>
 
 </Project>

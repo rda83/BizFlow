@@ -3,7 +3,7 @@
 using BizFlow.Core.Model;
 using BizFlow.Infrastructure.Abstractions;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
-using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
+//using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace BizFlow.Storage.PostgreSQL
@@ -172,74 +172,84 @@ namespace BizFlow.Storage.PostgreSQL
             return result;
         }
 
-        public async Task<long> AddCancellationRequestAsync(CancellationRequest request, CancellationToken cancellationToken = default)
-        {
-            var requestEntity = new Entities.CancellationRequest(request);
-            var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+        #region удалено-из-интерфейса-нужен-рефакторинг
 
-            var addResult = await cancellationRequestRepository.AddAsync(requestEntity, cancellationToken);
-            return addResult.Id;
+        public async Task<long> DEL_AddCancellationRequestAsync(CancellationToken cancellationToken = default)
+        {
+            //var requestEntity = new Entities.CancellationRequest(request);
+            //var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+
+            //var addResult = await cancellationRequestRepository.AddAsync(requestEntity, cancellationToken);
+            //return addResult.Id;
+
+            throw new NotImplementedException();
         }
 
-        public async Task<CancellationRequest?> GetCancellationRequestAsync(long id, CancellationToken cancellationToken = default)
+        public async Task DEL_GetCancellationRequestAsync(long id, CancellationToken cancellationToken = default)
         {
-            var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
-            var entity = await cancellationRequestRepository.GetByUniqueColumnAsync("Id", id);
+            throw new NotImplementedException();
 
-            if (entity == null)
-            {
-                return null;
-            }
+            //var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+            //var entity = await cancellationRequestRepository.GetByUniqueColumnAsync("Id", id);
 
-            var result = entity.ToCoreModel();
-            return result;
+            //if (entity == null)
+            //{
+            //    return null;
+            //}
+
+            //var result = entity.ToCoreModel();
+            //return result;
         }
 
-        public async Task UpdateCancellationRequestAsync(CancellationRequest cancellationRequest, CancellationToken cancellationToken = default)
+        public async Task DEL_UpdateCancellationRequestAsync(CancellationToken cancellationToken = default)
         {
-            var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
-            await cancellationRequestRepository.UpdateAsync(new Entities.CancellationRequest(cancellationRequest));
+            //var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+            //await cancellationRequestRepository.UpdateAsync(new Entities.CancellationRequest(cancellationRequest));
+            throw new NotImplementedException();
         }
 
-        public async Task<CancellationRequest?> GetActiveCancellationRequest(string pipelineName, CancellationToken cancellationToken = default)
+        public async Task DEL_GetActiveCancellationRequest(string pipelineName, CancellationToken cancellationToken = default)
         {
-            var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
+            throw new NotImplementedException();
+            //var cancellationRequestRepository = _uow.GetRepository<Entities.CancellationRequest>();
 
-            var executedCondition = new FilterCondition()
-            {
-                Operator = FilterOperator.Eq,
-                Value = false,
-            };
+            //var executedCondition = new FilterCondition()
+            //{
+            //    Operator = FilterOperator.Eq,
+            //    Value = false,
+            //};
 
-            var pipelineNameCondition = new FilterCondition()
-            {
-                Operator = FilterOperator.Eq,
-                Value = pipelineName,
-            };
+            //var pipelineNameCondition = new FilterCondition()
+            //{
+            //    Operator = FilterOperator.Eq,
+            //    Value = pipelineName,
+            //};
 
-            var expirationTimeCondition = new FilterCondition()
-            {
-                Operator = FilterOperator.Gt,
-                Value = DateTime.Now,
-            };
+            //var expirationTimeCondition = new FilterCondition()
+            //{
+            //    Operator = FilterOperator.Gt,
+            //    Value = DateTime.Now,
+            //};
 
-            var requestResult = await cancellationRequestRepository.GetPagedNewAsync(
-                new PagedQuery()
-                {
-                    Page = 1,
-                    PageSize = 1,
-                    Filters = new Dictionary<string, FilterCondition>()
-                    {
-                        { "executed", executedCondition },
-                        { "pipeline_name", pipelineNameCondition },
-                        { "expiration_time", expirationTimeCondition },
-                    },
-                    SortBy = new Dictionary<string, SortType>() { { "id", SortType.Asc } },
-                }, cancellationToken);
+            //var requestResult = await cancellationRequestRepository.GetPagedNewAsync(
+            //    new PagedQuery()
+            //    {
+            //        Page = 1,
+            //        PageSize = 1,
+            //        Filters = new Dictionary<string, FilterCondition>()
+            //        {
+            //            { "executed", executedCondition },
+            //            { "pipeline_name", pipelineNameCondition },
+            //            { "expiration_time", expirationTimeCondition },
+            //        },
+            //        SortBy = new Dictionary<string, SortType>() { { "id", SortType.Asc } },
+            //    }, cancellationToken);
 
-            var result = requestResult.FirstOrDefault();
+            //var result = requestResult.FirstOrDefault();
 
-            return result?.ToCoreModel();
+            //return result?.ToCoreModel();
         }
+
+        #endregion
     }
 }

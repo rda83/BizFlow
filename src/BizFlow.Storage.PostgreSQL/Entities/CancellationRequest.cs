@@ -15,34 +15,34 @@ namespace BizFlow.Storage.PostgreSQL.Entities
 
         public CancellationRequest() { }
 
-        public CancellationRequest(Core.Model.CancellationRequest cancellationRequest) 
-        {
-            Id = cancellationRequest.Id;
-            PipelineName = cancellationRequest.PipelineName;
-            ExpirationTime = cancellationRequest.ExpirationTime;
-            Description = cancellationRequest.Description;
-            ClosingByExpirationTimeOnly = cancellationRequest.ClosingByExpirationTimeOnly;
-            Created = cancellationRequest.Created;
-            Executed = cancellationRequest.Executed;
-            ClosingTime = cancellationRequest.ClosingTime;
-            ClosedAfterExpirationDate = cancellationRequest.ClosedAfterExpirationDate;
-        }
+        //public CancellationRequest(Core.Model.CancellationRequest cancellationRequest) 
+        //{
+        //    Id = cancellationRequest.Id;
+        //    PipelineName = cancellationRequest.PipelineName;
+        //    ExpirationTime = cancellationRequest.ExpirationTime;
+        //    Description = cancellationRequest.Description;
+        //    ClosingByExpirationTimeOnly = cancellationRequest.ClosingByExpirationTimeOnly;
+        //    Created = cancellationRequest.Created;
+        //    Executed = cancellationRequest.Executed;
+        //    ClosingTime = cancellationRequest.ClosingTime;
+        //    ClosedAfterExpirationDate = cancellationRequest.ClosedAfterExpirationDate;
+        //}
 
-        public Core.Model.CancellationRequest ToCoreModel()
-        {
-            var result = new Core.Model.CancellationRequest()
-            {
-                Id = Id,
-                PipelineName = PipelineName,
-                ExpirationTime = ExpirationTime,
-                Description = Description,
-                ClosingByExpirationTimeOnly = ClosingByExpirationTimeOnly,
-                Created = Created,
-                Executed = Executed,
-                ClosingTime = ClosingTime,
-                ClosedAfterExpirationDate = ClosedAfterExpirationDate,
-            };
-            return result;
-        }
+        //public Core.Model.CancellationRequest ToCoreModel()
+        //{
+        //    var result = new Core.Model.CancellationRequest()
+        //    {
+        //        Id = Id,
+        //        PipelineName = PipelineName,
+        //        ExpirationTime = ExpirationTime,
+        //        Description = Description,
+        //        ClosingByExpirationTimeOnly = ClosingByExpirationTimeOnly,
+        //        Created = Created,
+        //        Executed = Executed,
+        //        ClosingTime = ClosingTime,
+        //        ClosedAfterExpirationDate = ClosedAfterExpirationDate,
+        //    };
+        //    return result;
+        //}
     }
 }

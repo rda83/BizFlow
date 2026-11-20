@@ -1,5 +1,9 @@
 ﻿using BizFlow.Abstractions.Model;
-using BizFlow.Core.Model;
+
+// TODO: IBizFlowStorage разделить на IPipelineStorage, IJournalStorage
+//       перенести в проект DTO для БД
+//       IPipelineRegistry и IPipelineStorage делать в одном проекте BizFlow.Storage.PostgreSQL
+//       реализация IPipelineRegistry инжектит IPipelineStorage, в памяти не кэшируем
 
 namespace BizFlow.Infrastructure.Abstractions
 {
@@ -18,12 +22,6 @@ namespace BizFlow.Infrastructure.Abstractions
         Task<IReadOnlyCollection<JournalRecord>> GetJournalRecordByLaunchIdAsync(string launchId,
             CancellationToken cancellationToken = default);
         Task<string?> GetLastLaunchIdAsync(string pipelineName, CancellationToken cancellationToken = default);
-
-        Task<long> AddCancellationRequestAsync(CancellationRequest request, CancellationToken cancellationToken = default);
-
-        Task<CancellationRequest?> GetCancellationRequestAsync(long id, CancellationToken cancellationToken = default);
-        Task UpdateCancellationRequestAsync(CancellationRequest cancellationRequest, CancellationToken cancellationToken = default);
-        Task<CancellationRequest?> GetActiveCancellationRequest(string pipelineName, CancellationToken cancellationToken = default);
     }
 }
 
