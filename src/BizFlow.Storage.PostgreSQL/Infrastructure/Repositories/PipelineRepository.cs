@@ -1,5 +1,5 @@
 ﻿
-using BizFlow.Storage.PostgreSQL.Entities;
+using BizFlow.Infrastructure.Abstractions.Storage.Entities;
 using BizFlow.Storage.PostgreSQL.Helpers;
 using Npgsql;
 using System.Collections.Immutable;

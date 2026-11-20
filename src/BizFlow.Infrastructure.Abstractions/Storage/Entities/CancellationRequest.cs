@@ -1,7 +1,7 @@
 ﻿
-namespace BizFlow.Storage.PostgreSQL.Entities
+namespace BizFlow.Infrastructure.Abstractions.Storage.Entities
 {
-    class CancellationRequest
+    public class CancellationRequest
     {
         public long Id { get; set; }
         public string PipelineName { get; set; } = string.Empty;

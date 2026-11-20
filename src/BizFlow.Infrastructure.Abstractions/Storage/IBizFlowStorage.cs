@@ -5,7 +5,7 @@
 //       IPipelineRegistry и IPipelineStorage делать в одном проекте BizFlow.Storage.PostgreSQL
 //       реализация IPipelineRegistry инжектит IPipelineStorage, в памяти не кэшируем
 
-namespace BizFlow.Infrastructure.Abstractions
+namespace BizFlow.Infrastructure.Abstractions.Storage
 {
     public interface IBizFlowStorage : IDisposable
     {

@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 
-namespace BizFlow.Storage.PostgreSQL.Entities
+namespace BizFlow.Infrastructure.Abstractions.Storage.Entities
 {
-    class PipelineItem
+    public class PipelineItem
     {
         public long Id { get; set; }
         public long PipelineId { get; set; }
@@ -15,7 +15,7 @@ namespace BizFlow.Storage.PostgreSQL.Entities
         public DateTime UpdatedAt { get; set; }
         public PipelineItem() { }
 
-        public PipelineItem(long pipelineId, Abstractions.Model.PipelineItem pipelineItemDto)
+        public PipelineItem(long pipelineId, BizFlow.Abstractions.Model.PipelineItem pipelineItemDto)
         {
             PipelineId = pipelineId;
 
@@ -27,9 +27,9 @@ namespace BizFlow.Storage.PostgreSQL.Entities
             Options = pipelineItemDto.Options;
         }
 
-        public Abstractions.Model.PipelineItem ToCoreModel()
+        public BizFlow.Abstractions.Model.PipelineItem ToCoreModel()
         {
-            var result = new Abstractions.Model.PipelineItem()
+            var result = new BizFlow.Abstractions.Model.PipelineItem()
             {
                 Id = Id,
                 TypeOperationId = TypeOperationId,
@@ -38,7 +38,7 @@ namespace BizFlow.Storage.PostgreSQL.Entities
                 Blocked = Blocked,
                 Options = Options,
             };
-            return result;  
+            return result;
         }
     }
 }

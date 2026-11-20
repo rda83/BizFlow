@@ -1,9 +1,9 @@
 ﻿
 using BizFlow.Abstractions.Model;
 
-namespace BizFlow.Storage.PostgreSQL.Entities
+namespace BizFlow.Infrastructure.Abstractions.Storage.Entities
 {
-    class JournalRecord
+    public class JournalRecord
     {
         public long Id { get; set; }
         public DateTime Period { get; set; }
@@ -20,7 +20,7 @@ namespace BizFlow.Storage.PostgreSQL.Entities
 
         public JournalRecord() { }
 
-        public JournalRecord(Abstractions.Model.JournalRecord journalRecord)
+        public JournalRecord(BizFlow.Abstractions.Model.JournalRecord journalRecord)
         {
             Period = journalRecord.Period;
             PipelineName = journalRecord.PipelineName;
@@ -35,9 +35,9 @@ namespace BizFlow.Storage.PostgreSQL.Entities
             IsStartNow = journalRecord.IsStartNow;
         }
 
-        public Abstractions.Model.JournalRecord ToCoreModel()
+        public BizFlow.Abstractions.Model.JournalRecord ToCoreModel()
         {
-            var result = new Abstractions.Model.JournalRecord()
+            var result = new BizFlow.Abstractions.Model.JournalRecord()
             {
                 Period = Period,
                 PipelineName = PipelineName,

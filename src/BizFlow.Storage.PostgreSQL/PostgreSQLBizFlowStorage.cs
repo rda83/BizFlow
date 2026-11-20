@@ -1,9 +1,6 @@
 ﻿using BizFlow.Abstractions.Model;
-//using BizFlow.Core.Contracts.Storage;
-using BizFlow.Core.Model;
-using BizFlow.Infrastructure.Abstractions;
+using BizFlow.Infrastructure.Abstractions.Storage;
 using BizFlow.Storage.PostgreSQL.Infrastructure;
-//using BizFlow.Storage.PostgreSQL.Infrastructure.Repositories;
 using Microsoft.Extensions.Logging;
 
 namespace BizFlow.Storage.PostgreSQL
@@ -34,10 +31,10 @@ namespace BizFlow.Storage.PostgreSQL
             {
                 await _uow.BeginTransactionAsync(ct);
 
-                var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
-                var pipelineItemRepository = _uow.GetRepository<Entities.PipelineItem>();
+                var pipelineRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.Pipeline>();
+                var pipelineItemRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.PipelineItem>();
 
-                var result = await pipelineRepository.AddAsync(new Entities.Pipeline(pipeline), ct);
+                var result = await pipelineRepository.AddAsync(new BizFlow.Infrastructure.Abstractions.Storage.Entities.Pipeline(pipeline), ct);
 
                 if (result.Id <= 0)
                 {
@@ -47,7 +44,7 @@ namespace BizFlow.Storage.PostgreSQL
                 foreach (var pipelineItem in pipeline.PipelineItems)
                 {
                     var itemResult = await pipelineItemRepository.AddAsync(
-                        new Entities.PipelineItem(result.Id, pipelineItem), ct);
+                        new BizFlow.Infrastructure.Abstractions.Storage.Entities.PipelineItem(result.Id, pipelineItem), ct);
                 }
 
                 await _uow.CommitAsync(ct);
@@ -63,7 +60,7 @@ namespace BizFlow.Storage.PostgreSQL
         {
             try
             {
-                var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+                var pipelineRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.Pipeline>();
                 var result = await pipelineRepository.GetByUniqueColumnAsync("name", pipelineName, ct);
            
                 return result != null;
@@ -80,7 +77,7 @@ namespace BizFlow.Storage.PostgreSQL
             long maxId = lastId;
             List<Pipeline> result = [];
 
-            var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+            var pipelineRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.Pipeline>();
             var entities = await pipelineRepository.GetPagedAsync(lastId, limit, cancellationToken);
 
             if (entities != null)
@@ -97,8 +94,8 @@ namespace BizFlow.Storage.PostgreSQL
         public async Task<Pipeline?> GetPipelineAsync(string pipelineName, CancellationToken cancellationToken = default)
         {
 
-            var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
-            var pipelineItemRepository = _uow.GetRepository<Entities.PipelineItem>();
+            var pipelineRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.Pipeline>();
+            var pipelineItemRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.PipelineItem>();
 
             var pipelineEntity = await pipelineRepository.GetByUniqueColumnAsync("name", pipelineName);
 
@@ -116,15 +113,15 @@ namespace BizFlow.Storage.PostgreSQL
 
         public async Task<int> DeletePipelineAsync(string pipelineName, CancellationToken cancellationToken = default)
         {
-            var pipelineRepository = _uow.GetRepository<Entities.Pipeline>();
+            var pipelineRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.Pipeline>();
             var result = await pipelineRepository.DeleteAsync("name", pipelineName, cancellationToken);
             return result;
         }
 
         public async Task AddJournalRecordAsync(JournalRecord record, CancellationToken cancellationToken = default)
         {
-            var recordEntity = new Entities.JournalRecord(record);
-            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+            var recordEntity = new BizFlow.Infrastructure.Abstractions.Storage.Entities.JournalRecord(record);
+            var journalRecordRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.JournalRecord>();
             await journalRecordRepository.AddAsync(recordEntity);
         }
 
@@ -134,7 +131,7 @@ namespace BizFlow.Storage.PostgreSQL
             long maxId = lastId;
             List<JournalRecord> result = [];
 
-            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+            var journalRecordRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.JournalRecord>();
 
             var entities = await journalRecordRepository.GetPagedAsync(lastId, limit, cancellationToken);
             if (entities != null)
@@ -151,7 +148,7 @@ namespace BizFlow.Storage.PostgreSQL
         public async Task<IReadOnlyCollection<JournalRecord>> GetJournalRecordByLaunchIdAsync(string launchId, 
             CancellationToken cancellationToken = default)
         {
-            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+            var journalRecordRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.JournalRecord>();
             var journalRecorEntities = await journalRecordRepository.GetByColumnAsync("launch_id", launchId, cancellationToken);
 
             var result = journalRecorEntities.Select(i => i.ToCoreModel()).ToList();
@@ -162,7 +159,7 @@ namespace BizFlow.Storage.PostgreSQL
         {
             string? result = null;
 
-            var journalRecordRepository = _uow.GetRepository<Entities.JournalRecord>();
+            var journalRecordRepository = _uow.GetRepository<BizFlow.Infrastructure.Abstractions.Storage.Entities.JournalRecord>();
             var journalRecorEntities = await journalRecordRepository.GetByColumnAsync("pipeline_name", pipelineName, cancellationToken);
 
             var record = journalRecorEntities.OrderByDescending(i => i.Period).FirstOrDefault();

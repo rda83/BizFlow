@@ -1,6 +1,6 @@
-﻿namespace BizFlow.Storage.PostgreSQL.Entities
+﻿namespace BizFlow.Infrastructure.Abstractions.Storage.Entities
 {
-    class Pipeline
+    public class Pipeline
     {
         public long Id { get; set; }
         public string Name { get; set; } = string.Empty;
@@ -13,7 +13,7 @@
         public string? UpdatedBy { get; set; }
 
         public Pipeline() { }
-        public Pipeline(Abstractions.Model.Pipeline pipelineDto)
+        public Pipeline(BizFlow.Abstractions.Model.Pipeline pipelineDto)
         {
             Name = pipelineDto.Name;
             //CronExpression = pipelineDto.CronExpression;
@@ -21,9 +21,9 @@
             Blocked = pipelineDto.Blocked;
         }
 
-        public Abstractions.Model.Pipeline ToCoreModel(IEnumerable<PipelineItem>? items = null)
+        public BizFlow.Abstractions.Model.Pipeline ToCoreModel(IEnumerable<PipelineItem>? items = null)
         {
-            var result = new Abstractions.Model.Pipeline()
+            var result = new BizFlow.Abstractions.Model.Pipeline()
             {
                 Name = Name,
                 //CronExpression = CronExpression,
