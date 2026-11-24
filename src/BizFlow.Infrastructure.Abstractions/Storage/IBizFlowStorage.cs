@@ -5,6 +5,12 @@
 //       IPipelineRegistry и IPipelineStorage делать в одном проекте BizFlow.Storage.PostgreSQL
 //       реализация IPipelineRegistry инжектит IPipelineStorage, в памяти не кэшируем
 
+// ---
+// * IPipelineRegistry - синхронный, а IPipelineStorage (работа с БД) - асинхронный
+// * как это должно выглядеть на стороне клиента клиента
+//   - клиент использует in-memory версию: builder.Services.AddBizFlowInMemory();
+//   - клиент использует БД версию: builder.Services.AddBizFlowDatabase(builder.Configuration.GetConnectionString("Default"));
+
 namespace BizFlow.Infrastructure.Abstractions.Storage
 {
     public interface IBizFlowStorage : IDisposable
