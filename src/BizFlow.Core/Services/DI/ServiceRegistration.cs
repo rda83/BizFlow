@@ -7,7 +7,7 @@ using BizFlow.Core.Internal.Features.StatusPipeline;
 //using BizFlow.Core.Internal.Shared;
 //using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Quartz;
+//using Quartz;
 using System.Reflection;
 
 
@@ -56,7 +56,7 @@ namespace BizFlow.Core.Services.DI
             //    );
             //});
 
-            services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+            //services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
             //services.AddScoped<BizFlowJobManager>();
 
