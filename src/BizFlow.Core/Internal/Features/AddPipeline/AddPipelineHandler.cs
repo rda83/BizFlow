@@ -1,11 +1,11 @@
-﻿using BizFlow.Core.Internal.Shared;
+﻿//using BizFlow.Core.Internal.Shared;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BizFlow.Core.Internal.Features.AddPipeline
 {
     internal class AddPipelineHandler : IAddPipelineHandler
     {
-        private readonly BizFlowJobManager _bizFlowJobManager;
+        //private readonly BizFlowJobManager _bizFlowJobManager;
         private readonly IServiceScopeFactory _scopeFactory;
         //private readonly IBizFlowStorage _storage;
 

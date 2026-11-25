@@ -1,12 +1,12 @@
 ﻿//using BizFlow.Core.Contracts.Storage;
-using BizFlow.Core.Internal.Shared;
+//using BizFlow.Core.Internal.Shared;
 using BizFlow.Core.Model;
 
 namespace BizFlow.Core.Internal.Features.DeletePipeline
 {
     public class DeletePipelineHandler : IDeletePipelineHandler
     {
-        private readonly BizFlowJobManager _bizFlowJobManager;
+        //private readonly BizFlowJobManager _bizFlowJobManager;
         //private readonly IBizFlowStorage _storage;
 
         //public DeletePipelineHandler(BizFlowJobManager bizFlowJobManager, IBizFlowStorage storage)

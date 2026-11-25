@@ -3,9 +3,9 @@ using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
 using BizFlow.Core.Internal.Features.StartNowPipeline;
 using BizFlow.Core.Internal.Features.StatusPipeline;
-using BizFlow.Core.Internal.Jobs;
-using BizFlow.Core.Internal.Shared;
-using Microsoft.AspNetCore.Hosting;
+//using BizFlow.Core.Internal.Jobs;
+//using BizFlow.Core.Internal.Shared;
+//using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 using System.Reflection;
@@ -49,16 +49,16 @@ namespace BizFlow.Core.Services.DI
             //}
             #endregion
 
-            services.AddQuartz(q => {
-                q.AddJob<BizFlowJob>(opts => opts
-                    .WithIdentity("bizFlowDefaultJob")
-                    .StoreDurably()
-                );
-            });
+            //services.AddQuartz(q => {
+            //    q.AddJob<BizFlowJob>(opts => opts
+            //        .WithIdentity("bizFlowDefaultJob")
+            //        .StoreDurably()
+            //    );
+            //});
 
             services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
-            services.AddScoped<BizFlowJobManager>();
+            //services.AddScoped<BizFlowJobManager>();
 
             
             services.AddScoped<IAddPipelineHandler, AddPipelineHandler>();
@@ -67,7 +67,7 @@ namespace BizFlow.Core.Services.DI
             services.AddScoped<IStatusPipelineHandler, StatusPipelineHandler>();
             services.AddScoped<ICancelPipelineHandler, CancelPipelineHandler>();
 
-            services.AddTransient<IStartupFilter, BizFlowStartupFilter>();
+            //services.AddTransient<IStartupFilter, BizFlowStartupFilter>();
         }
     }
 }
