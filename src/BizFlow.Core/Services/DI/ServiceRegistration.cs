@@ -1,4 +1,5 @@
-﻿using BizFlow.Core.Internal.Features.AddPipeline;
+﻿using BizFlow.Abstractions.Features.AddPipeline;
+using BizFlow.Core.Features;
 using BizFlow.Core.Internal.Features.CancelPipeline;
 using BizFlow.Core.Internal.Features.DeletePipeline;
 using BizFlow.Core.Internal.Features.StartNowPipeline;
@@ -10,6 +11,10 @@ using Microsoft.Extensions.DependencyInjection;
 //using Quartz;
 using System.Reflection;
 
+
+// Удалить этот файл вообще, #2109075 Реализовать АПИ для использования библиотеки
+// далее, механизмы подключения библиотеки
+// далее высокоуровневая схема, на уровне отдельных проектов, все что минимально надо для работы с библиотекой
 
 namespace BizFlow.Core.Services.DI
 {

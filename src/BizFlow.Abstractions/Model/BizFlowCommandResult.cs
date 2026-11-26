@@ -1,7 +1,6 @@
-﻿
-namespace BizFlow.Core.Model
+﻿namespace BizFlow.Abstractions.Model
 {
-    public class BizFlowChangingResult
+    public class BizFlowCommandResult
     {
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;

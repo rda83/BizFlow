@@ -1,4 +1,4 @@
-﻿using BizFlow.Core.Internal.Features.AddPipeline;
+﻿using BizFlow.Abstractions.Features.AddPipeline;
 using BizFlow.Core.Services.DI;
 using BizFlow.Storage.PostgreSQL;
 using ClientBizFlow_attemp_1;

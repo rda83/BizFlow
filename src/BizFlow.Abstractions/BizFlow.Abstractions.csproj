@@ -6,4 +6,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Features\DeletePipeline\" />
+    <Folder Include="Features\CancelPipeline\" />
+    <Folder Include="Features\StatusPipeline\" />
+    <Folder Include="Features\StartNowPipeline\" />
+  </ItemGroup>
+
 </Project>

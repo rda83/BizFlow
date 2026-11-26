@@ -1,10 +1,10 @@
-﻿using BizFlow.Core.Model;
+﻿using BizFlow.Abstractions.Model;
 
 namespace BizFlow.Core.Internal.Features.DeletePipeline
 {
     public interface IDeletePipelineHandler
     {
-        Task<BizFlowChangingResult> DeletePipelineAsync(DeletePipelineCommand command,
+        Task<BizFlowCommandResult> DeletePipelineAsync(DeletePipelineCommand command,
             CancellationToken cancellationToken = default);
     }
 }

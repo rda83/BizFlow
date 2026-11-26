@@ -1,6 +1,7 @@
 ﻿//using BizFlow.Core.Contracts.Storage;
 //using BizFlow.Core.Internal.Shared;
-using BizFlow.Core.Model;
+using BizFlow.Abstractions.Model;
+
 namespace BizFlow.Core.Internal.Features.StartNowPipeline
 {
     public class StartNowPipelineHandler : IStartNowPipelineHandler
@@ -14,7 +15,7 @@ namespace BizFlow.Core.Internal.Features.StartNowPipeline
         //    _storage = storage;
         //}
 
-        public async Task<BizFlowChangingResult> StartNowPipelineAsync(StartNowPipelineCommand command,
+        public async Task<BizFlowCommandResult> StartNowPipelineAsync(StartNowPipelineCommand command,
             CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

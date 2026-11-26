@@ -1,10 +1,10 @@
-﻿using BizFlow.Core.Model;
+﻿using BizFlow.Abstractions.Model;
 
 namespace BizFlow.Core.Internal.Features.StartNowPipeline
 {
     public interface IStartNowPipelineHandler
     {
-        Task<BizFlowChangingResult> StartNowPipelineAsync(StartNowPipelineCommand command,
+        Task<BizFlowCommandResult> StartNowPipelineAsync(StartNowPipelineCommand command,
             CancellationToken cancellationToken = default);
     }
 }

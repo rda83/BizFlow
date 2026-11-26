@@ -1,12 +1,7 @@
-﻿
-using System.Text.Json;
+﻿using System.Text.Json;
 
-namespace BizFlow.Core.Internal.Features.AddPipeline
+namespace BizFlow.Abstractions.Features.AddPipeline
 {
-    // Правила действий при ошибках (либо на всю операцию либо отдельно по элементам)
-    // Тип Job-а (BizFlowJob : IJob) если их будет несколько
-
-
     public class AddPipelineCommand
     {
         public string Name { get; set; } = string.Empty;

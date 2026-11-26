@@ -1,6 +1,5 @@
 ﻿using BizFlow.Abstractions;
 using BizFlow.Abstractions.Model;
-using BizFlow.Core.Model;
 using Microsoft.Extensions.Logging;
 
 namespace BizFlow.ExecutionJournal.Logger

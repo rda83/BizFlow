@@ -1,5 +1,5 @@
 ﻿//using BizFlow.Core.Contracts.Storage;
-using BizFlow.Core.Model;
+using BizFlow.Abstractions.Model;
 
 namespace BizFlow.Core.Internal.Features.CancelPipeline
 {
@@ -12,7 +12,7 @@ namespace BizFlow.Core.Internal.Features.CancelPipeline
         //    _storage = storage;
         //}
 
-        public async Task<BizFlowChangingResult> CancelPipeline(CancelPipelineCommand command,
+        public async Task<BizFlowCommandResult> CancelPipeline(CancelPipelineCommand command,
             CancellationToken cancellationToken = default)
         {
 
@@ -41,7 +41,7 @@ namespace BizFlow.Core.Internal.Features.CancelPipeline
             //return result;
         }
 
-        public async Task<BizFlowChangingResult> CloseCancellationRequest(CloseCancelPipelineCommand command, 
+        public async Task<BizFlowCommandResult> CloseCancellationRequest(CloseCancelPipelineCommand command, 
             CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();

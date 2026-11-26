@@ -1,7 +1,8 @@
 ﻿//using BizFlow.Core.Internal.Shared;
+using BizFlow.Abstractions.Features.AddPipeline;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BizFlow.Core.Internal.Features.AddPipeline
+namespace BizFlow.Core.Features
 {
     internal class AddPipelineHandler : IAddPipelineHandler
     {

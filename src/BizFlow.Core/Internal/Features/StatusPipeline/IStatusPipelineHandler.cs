@@ -1,4 +1,4 @@
-﻿using BizFlow.Core.Model;
+﻿using BizFlow.Abstractions.Model;
 
 namespace BizFlow.Core.Internal.Features.StatusPipeline
 {

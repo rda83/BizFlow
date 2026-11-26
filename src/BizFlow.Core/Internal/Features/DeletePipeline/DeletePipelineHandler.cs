@@ -1,6 +1,6 @@
 ﻿//using BizFlow.Core.Contracts.Storage;
 //using BizFlow.Core.Internal.Shared;
-using BizFlow.Core.Model;
+using BizFlow.Abstractions.Model;
 
 namespace BizFlow.Core.Internal.Features.DeletePipeline
 {
@@ -15,7 +15,7 @@ namespace BizFlow.Core.Internal.Features.DeletePipeline
         //    _storage = storage;
         //}
 
-        public async Task<BizFlowChangingResult> DeletePipelineAsync(DeletePipelineCommand command, 
+        public async Task<BizFlowCommandResult> DeletePipelineAsync(DeletePipelineCommand command, 
             CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
