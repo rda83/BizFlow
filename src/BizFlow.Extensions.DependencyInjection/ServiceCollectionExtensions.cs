@@ -40,38 +40,9 @@ namespace BizFlow.Extensions.DependencyInjection
             }
         }
  
-        public static IServiceCollection AddBizFlowScheduler(this IServiceCollection services,
-            Action<BizFlowSchedulerOptions>? configure = null)
+        public static IServiceCollection AddBizFlowScheduler(this IServiceCollection services)
         {
-            var options = new BizFlowSchedulerOptions();
-            configure?.Invoke(options);
-
-
-            if (options.EnableExecutionJournal)
-            {
-                //services.TryAddSingleton<IExecutionJournal, LoggerJobExecutionHistoryStore>();
-            }
-            else
-            {
-                services.TryAddSingleton<IExecutionJournal, NullExecutionJournal>();
-            }
-
-
-
-            services.TryAddSingleton<IPipelineRegistry, DefaultPipelineRegistry>();
-            services.AddSingleton<ITimeProvider>(options.TimeProvider ?? new SystemTimeProvider());
-
-            services.AddScoped<PipelineExecutor>();
-
-
-            //services.AddSingleton<BizFlowScheduler>();
-            //services.AddHostedService<BizFlowScheduler>(sp => sp.GetRequiredService<BizFlowScheduler>());
-
             services.AddBizFlowCore();
-
-
-            services.AddSingleton<ICancellationService>(sp => sp.GetRequiredService<BizFlowScheduler>());
-
             return services;
         }
     }
